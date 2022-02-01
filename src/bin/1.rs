@@ -1,16 +1,10 @@
 use std::env;
-use std::fs::File;
-use std::io::{BufReader, BufRead};
 use std::collections::VecDeque;
-
-fn get_buffered_reader() -> BufReader<File>{
-    let path = "data/1.txt";
-    let input = File::open(path).expect("could not open file!");
-    BufReader::new(input)
-}
+use aoc2021::utils::{get_buffered_reader};
+use std::io::{BufRead};
 
 fn part1() {
-    let buffered = get_buffered_reader();
+    let buffered = get_buffered_reader(1);
     let mut previous: Option<i32> = None;
     let mut total = 0;
     for line in buffered.lines() {
@@ -28,7 +22,7 @@ fn part1() {
 }
 
 fn part2 () {
-    let buffered = get_buffered_reader();    
+    let buffered = get_buffered_reader(1);    
     let mut total = 0;
 
     let mut nums = VecDeque::new();
