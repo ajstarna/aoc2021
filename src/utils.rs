@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufReader};
 
 /// gives a buffered reader to iterate over for the lines of a file
 /// {day}.txt in the data folder.

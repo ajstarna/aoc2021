@@ -4,23 +4,52 @@ use std::io::{BufRead};
 
 
 fn part1() {
-    let buffered = get_buffered_reader();
-    let mut previous: Option<i32> = None;
-    let mut total = 0;
+    let buffered = get_buffered_reader(2);
+    let mut horizontal = 0;
+    let mut depth = 0;
     for line in buffered.lines() {
 	if let Ok(line) = line {
-	    let current = line.parse::<i32>().expect("unable to parse line as an i32");
-	    if let Some(num) = previous {
-		if current > num {
-		    total += 1;
-		}
+	    let split: Vec<&str> = line.split_whitespace().collect();
+	    let val = split[1].parse::<i32>().expect("unable to parse val as an i32");	    
+	    // println!("{:?}", split);
+	    match split[0] {
+		"forward" => horizontal += val,
+		"up" => depth -= val,
+		"down" => depth += val,
+		_ => println!("huh?"),
 	    }
-	    previous = Some(current);	    
 	}
     }
-    println!("total increases = {}", total);    
+    println!("horizontal = {}", horizontal);
+    println!("depth = {}", depth);
+    println!("multiplied = {}", depth * horizontal);        
 }
 
+fn part2() {
+    let buffered = get_buffered_reader(2);
+    let mut horizontal = 0;
+    let mut depth = 0;
+    let mut aim = 0;    
+    for line in buffered.lines() {
+	if let Ok(line) = line {
+	    let split: Vec<&str> = line.split_whitespace().collect();
+	    let val = split[1].parse::<i32>().expect("unable to parse val as an i32");	    
+	    // println!("{:?}", split);
+	    match split[0] {
+		"forward" => {
+		    horizontal += val;
+		    depth += aim * val;
+		},
+		"up" => aim -= val,
+		"down" => aim += val,
+		_ => println!("huh?"),
+	    }
+	}
+    }
+    println!("horizontal = {}", horizontal);
+    println!("depth = {}", depth);
+    println!("multiplied = {}", depth * horizontal);        
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
