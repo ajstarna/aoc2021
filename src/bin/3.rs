@@ -4,8 +4,8 @@ use std::io::{BufRead};
 use std::collections::HashSet;
 
 fn part1() {
-    let buffered = get_buffered_reader(4);
-    let num_bits = 5;
+    let buffered = get_buffered_reader(3);
+    let num_bits = 12;
     let mut sums = vec![0; num_bits]; // each value represents the sum for a given bit across all rows
     let mut num_lines = 0;
     for line in buffered.lines() {
@@ -45,9 +45,9 @@ fn part1() {
 }
 
 fn part2() {
-    let buffered = get_buffered_reader(4);
-    let num_bits = 5;
-    let mut sums = vec![0; num_bits]; // each value represents the sum for a given bit across all rows
+    let buffered = get_buffered_reader(3);
+    let num_bits = 12;
+    // let mut sums = vec![0; num_bits]; // each value represents the sum for a given bit across all rows
     let mut num_lines = 0;
 
     // for each bit 0 to 12, we have a hashset, which stores the line indices
@@ -72,7 +72,7 @@ fn part2() {
 			zeros_for_bit[i].insert(line_idx);
 		    },
 		    '1' => {
-			sums[i] += 1;
+			//sums[i] += 1;
 			ones_for_bit[i].insert(line_idx);
 		    },
 		    _ => println!("invalid bit"),
@@ -80,16 +80,8 @@ fn part2() {
 	    }
 	}
     }
-
-    TODO this whole solution is wrong. after we isolate numbers with the common bit,
-    we then need to find the common/uncommon numbers again for only that subset...
     
-    // sums = [507, 491, 516, 507, 502, 498, 502, 481, 520, 484, 506, 506]
-    // 101110101011 most common number == 2987 in decimal, line 131 (including 0 index)
-    // 010001010100 least common number
-    // not quite found, but on line 722, we have 010001010101 == 1109
-    
-    println!("sums = {:?}", sums);
+    // println!("sums = {:?}", sums);
     println!("num_lines = {}", num_lines);
     // now we know the most common based on sums, lets iterate
     // once more
@@ -97,59 +89,53 @@ fn part2() {
     let mut c02_lines = HashSet::new();
     let mut oxygen_done = false;
     let mut c02_done = false;    
-    for (i, sum) in sums.iter().enumerate() {
+    //for (i, sum) in sums.iter().enumerate() {
+    for i in 0..num_bits {
 	println!("bit = {}", i);
 	println!("oxygen_lines = {:?}", oxygen_lines);
 	println!("c02_lines = {:?}", c02_lines);
-	
+
 	let one_lines = &ones_for_bit[i];
 	let zero_lines = &zeros_for_bit[i];		
-	if *sum >= num_lines / 2 {
-	    // 1 was the most common bit (or equal)
-	    if !oxygen_done {
-		if oxygen_lines.len() == 0 {
-		    oxygen_lines = one_lines.clone();
-		} else {
-		    oxygen_lines = oxygen_lines.into_iter().filter(|e| one_lines.contains(e)).collect();
-		}
-		if oxygen_lines.len() == 1 {
-		    oxygen_done = true;
-		}
+	
+	if oxygen_lines.len() == 0 {
+	    // this is the first assignment
+	    if one_lines.len() >= zero_lines.len() {
+		oxygen_lines = one_lines.clone();		
+		c02_lines = zero_lines.clone();		
+	    } else {
+		oxygen_lines = zero_lines.clone();		
+		c02_lines = one_lines.clone();		
 	    }
-	    if !c02_done {
-		if c02_lines.len() == 0 {
-		    c02_lines = zero_lines.clone();
-		} else {
-		    c02_lines = c02_lines.into_iter().filter(|e| zero_lines.contains(e)).collect();
-		}
-		if c02_lines.len() == 1 {
-		    c02_done = true;
-		}
-	    }
+	    continue;
+	}
 
-	} else {
-	    // 0 was the most common bit
-	    if !oxygen_done {
-		if oxygen_lines.len() == 0 {
-		    oxygen_lines = zero_lines.clone();
-		} else {
-		    oxygen_lines = oxygen_lines.into_iter().filter(|e| zero_lines.contains(e)).collect();
-		}
-		if oxygen_lines.len() == 1 {
-		    oxygen_done = true;
-		}
+	if ! oxygen_done {
+	    let oxygen_ones: HashSet<usize> = oxygen_lines.iter().filter(|e| one_lines.contains(e)).map(|e| *e).collect();
+	    let oxygen_zeros: HashSet<usize> = oxygen_lines.iter().filter(|e| zero_lines.contains(e)).map(|e| *e).collect();
+	    if oxygen_ones.len() >= oxygen_zeros.len() {
+		oxygen_lines = oxygen_ones;
+	    } else {
+		oxygen_lines = oxygen_zeros;
 	    }
-	    if !c02_done {
-		if c02_lines.len() == 0 {
-		    c02_lines = one_lines.clone();
-		} else {
-		    c02_lines = c02_lines.into_iter().filter(|e| one_lines.contains(e)).collect();
-		}
-		if c02_lines.len() == 1 {
-		    c02_done = true;
-		}
+	    if oxygen_lines.len() == 1 {
+		oxygen_done = true;
 	    }
 	}
+
+	if !c02_done {
+	    let c02_ones: HashSet<usize> = c02_lines.iter().filter(|e| one_lines.contains(e)).map(|e| *e).collect();
+	    let c02_zeros: HashSet<usize> = c02_lines.iter().filter(|e| zero_lines.contains(e)).map(|e| *e).collect();
+	    if c02_ones.len() >= c02_zeros.len() {
+		c02_lines = c02_zeros;
+	    } else {
+		c02_lines = c02_ones;
+	    }
+	    if c02_lines.len() == 1 {
+		c02_done = true;
+	    }
+	}
+	
 	if oxygen_done && c02_done {
 	    break;
 	}
