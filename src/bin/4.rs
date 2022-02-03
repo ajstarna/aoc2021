@@ -3,6 +3,8 @@ use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
 
 
+/// each board is a 5x5 bingo board represented in row-major
+/// we check each row and each column for five -1s (indicating the numbers has been called)
 fn check_win(board: & Vec<i32>) -> bool {
     let mut row_start = 0;
     while row_start < board.len() {
@@ -83,52 +85,35 @@ fn part1() {
     println!("all winning indicies = {:?}", winning_indices);
     let mut best_amount = f64::INFINITY;
     let mut best_board = None;
+    let mut worst_amount = f64::NEG_INFINITY;
+    let mut worst_board = None;
     for (i, val) in winning_indices.iter().enumerate() {
 	if let Some(num) = val {
 	    if (*num as f64) < best_amount {
 		best_board = Some(i);
 		best_amount = *num as f64;
-		println!("won after {:?} numbers", *num);
+		println!("best won after {:?} numbers", *num);
+	    }
+	    if (*num as f64) > worst_amount {
+		worst_board = Some(i);
+		worst_amount = *num as f64;
+		println!("worst won after {:?} numbers", *num);
 	    }
 	}
     }
     println!("the best board is {:?} with a score of {:?}, and needing {:?} numbers to be called", best_board, scores[best_board.unwrap()], best_amount);
-}
-
-fn part2() {
-    let buffered = get_buffered_reader(2);
-    let mut horizontal = 0;
-    let mut depth = 0;
-    let mut aim = 0;    
-    for line in buffered.lines() {
-	if let Ok(line) = line {
-	    let split: Vec<&str> = line.split_whitespace().collect();
-	    let val = split[1].parse::<i32>().expect("unable to parse val as an i32");	    
-	    // println!("{:?}", split);
-	    match split[0] {
-		"forward" => {
-		    horizontal += val;
-		    depth += aim * val;
-		},
-		"up" => aim -= val,
-		"down" => aim += val,
-		_ => println!("huh?"),
-	    }
-	}
-    }
-    println!("horizontal = {}", horizontal);
-    println!("depth = {}", depth);
-    println!("multiplied = {}", depth * horizontal);        
+    println!("the worst board is {:?} with a score of {:?}, and needing {:?} numbers to be called", worst_board, scores[worst_board.unwrap()], worst_amount);    
 }
 
 fn main() {
+    // in this case, part1 happened to be so similar, I just made it do both
     let args: Vec<String> = env::args().collect();
     assert!(args.len() == 2);    
     let part = &args[1];
     println!("part = {}", part);
     match part.as_str() {
 	"1" => part1(),
-	"2" => part2(),
+	"2" => part1(),
 	_ => panic!("invalid part number argument!"),
     }
 }
