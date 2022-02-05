@@ -1,3 +1,4 @@
+
 use std::env;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
@@ -33,7 +34,6 @@ fn part1() {
     let mut winning_indices: Vec<Option<usize>> = Vec::new(); // keep track on which turn each board won
     for (i, line) in buffered.lines().enumerate() {
 	if let Ok(line) = line {
-	    //println!("line = '{:?}'", line);
 	    if i == 0 {
 		let numbers = line.split(',').map(|x| x.parse::<i32>().unwrap()).collect();
 		println!("numbers = {:?}", numbers);
@@ -41,14 +41,11 @@ fn part1() {
 		continue;
 	    }
 	    if line == "" {
-		// TODO: analyze the current board and fill its score and winning index
 		if let Some(ref mut board) = board_opt {
 		    println!("before {:?}", board);
 		    let mut winner_flag = false;
 		    for (count, num) in numbers_opt.as_ref().unwrap().iter().enumerate() {
-			//println!("num = {}", num);
 			for i in 0..board.len() {
-			    //println!("board[i] = {}", board[i]);			    
 			    if board[i] == *num {
 				board[i] = -1; // indicate it was a winner
 			    }
