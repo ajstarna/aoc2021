@@ -19,7 +19,7 @@ struct Grid {
 impl Grid {
 
     fn new(rows: usize, cols: usize) -> Self {
-	let mut grid = vec![0; (rows * cols)];   	
+	let mut grid = vec![0; rows * cols];   	
 	Grid { grid, rows, cols }
     }
     
@@ -39,27 +39,26 @@ fn part1() {
     let mut lines = Vec::new(); // store all the lines as they are read
     let mut max_x = 0; // keep track of how big the grid will be
     let mut max_y = 0; // keep track of how big the grid will be
-    for (i, line) in buffered.lines().enumerate() {
-	if let Ok(line) = line {
-	    //println!("line = '{:?}'", line);
-	    let coords: Vec<&str> = line.split(" -> ").collect();
-	    let point1: Vec<i32> = coords[0].split(",").map(|x| x.parse::<i32>().unwrap()).collect();
-	    let point2: Vec<i32> = coords[1].split(",").map(|x| x.parse::<i32>().unwrap()).collect();
-	    if let [x1, y1] = point1[..] {
-		if let [x2, y2] = point2[..] {
-		    max_x = cmp::max(max_x, x1);
-		    max_x = cmp::max(max_x, x2);		    
-		    max_y = cmp::max(max_y, y1);
-		    max_y = cmp::max(max_y, y2);		    
-		    let line = Line {x1, y1, x2, y2};
-		    lines.push(line);
-		} else {
-		    println!("problem with line {:?}", line);
-		}
+    for line in buffered.lines().flatten() {
+	//println!("line = '{:?}'", line);
+	let coords: Vec<&str> = line.split(" -> ").collect();
+	let point1: Vec<i32> = coords[0].split(',').map(|x| x.parse::<i32>().unwrap()).collect();
+	let point2: Vec<i32> = coords[1].split(',').map(|x| x.parse::<i32>().unwrap()).collect();
+	if let [x1, y1] = point1[..] {
+	    if let [x2, y2] = point2[..] {
+		max_x = cmp::max(max_x, x1);
+		max_x = cmp::max(max_x, x2);		    
+		max_y = cmp::max(max_y, y1);
+		max_y = cmp::max(max_y, y2);		    
+		let line = Line {x1, y1, x2, y2};
+		lines.push(line);
 	    } else {
-		    println!("problem with line {:?}", line);		    
-		}
-	}
+		println!("problem with line {:?}", line);
+	    }
+	} else {
+		println!("problem with line {:?}", line);		    
+	    }
+
     }
     println!("max x = {:?}, max y = {:?}", max_x, max_y);
 

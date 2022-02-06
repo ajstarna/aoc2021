@@ -8,15 +8,13 @@ fn part1() {
     let num_bits = 12;
     let mut sums = vec![0; num_bits]; // each value represents the sum for a given bit across all rows
     let mut num_lines = 0;
-    for line in buffered.lines() {
-	if let Ok(line) = line {
-	    num_lines += 1;
-	    for (i, c) in line.chars().enumerate() {
-		match c {
-		    '0' => (),
-		    '1' => sums[i] += 1,
-		    _ => println!("invalid bit"),
-		}
+    for line in buffered.lines().flatten() {
+	num_lines += 1;
+	for (i, c) in line.chars().enumerate() {
+	    match c {
+		'0' => (),
+		'1' => sums[i] += 1,
+		_ => println!("invalid bit"),
 	    }
 	}
     }
@@ -61,22 +59,20 @@ fn part2() {
 	zeros_for_bit.push(HashSet::new());
     }
     let mut numbers = Vec::new();
-    for (line_idx, line) in buffered.lines().enumerate() {
-	if let Ok(line) = line {
-	    num_lines += 1;
-	    let num = i32::from_str_radix(&line, 2).expect("Not a binary number!");
-	    numbers.push(num);
-	    for (i, c) in line.chars().enumerate() {
-		match c {
-		    '0' => {
-			zeros_for_bit[i].insert(line_idx);
-		    },
-		    '1' => {
-			//sums[i] += 1;
-			ones_for_bit[i].insert(line_idx);
-		    },
-		    _ => println!("invalid bit"),
-		}
+    for (line_idx, line) in buffered.lines().flatten().enumerate() {
+	num_lines += 1;
+	let num = i32::from_str_radix(&line, 2).expect("Not a binary number!");
+	numbers.push(num);
+	for (i, c) in line.chars().enumerate() {
+	    match c {
+		'0' => {
+		    zeros_for_bit[i].insert(line_idx);
+		},
+		'1' => {
+		    //sums[i] += 1;
+		    ones_for_bit[i].insert(line_idx);
+		},
+		_ => println!("invalid bit"),
 	    }
 	}
     }
@@ -98,7 +94,7 @@ fn part2() {
 	let one_lines = &ones_for_bit[i];
 	let zero_lines = &zeros_for_bit[i];		
 	
-	if oxygen_lines.len() == 0 {
+	if oxygen_lines.is_empty() {
 	    // this is the first assignment
 	    if one_lines.len() >= zero_lines.len() {
 		oxygen_lines = one_lines.clone();		
@@ -111,8 +107,9 @@ fn part2() {
 	}
 
 	if ! oxygen_done {
-	    let oxygen_ones: HashSet<usize> = oxygen_lines.iter().filter(|e| one_lines.contains(e)).map(|e| *e).collect();
-	    let oxygen_zeros: HashSet<usize> = oxygen_lines.iter().filter(|e| zero_lines.contains(e)).map(|e| *e).collect();
+
+	    let oxygen_ones: HashSet<usize> = oxygen_lines.iter().filter(|e| one_lines.contains(e)).copied().collect();
+	    let oxygen_zeros: HashSet<usize> = oxygen_lines.iter().filter(|e| zero_lines.contains(e)).copied().collect();
 	    if oxygen_ones.len() >= oxygen_zeros.len() {
 		oxygen_lines = oxygen_ones;
 	    } else {
@@ -124,8 +121,10 @@ fn part2() {
 	}
 
 	if !c02_done {
-	    let c02_ones: HashSet<usize> = c02_lines.iter().filter(|e| one_lines.contains(e)).map(|e| *e).collect();
-	    let c02_zeros: HashSet<usize> = c02_lines.iter().filter(|e| zero_lines.contains(e)).map(|e| *e).collect();
+	    //let c02_ones: HashSet<usize> = c02_lines.iter().filter(|e| one_lines.contains(e)).map(|e| *e).collect();
+	    //let c02_zeros: HashSet<usize> = c02_lines.iter().filter(|e| zero_lines.contains(e)).map(|e| *e).collect();
+	    let c02_ones: HashSet<usize> = c02_lines.iter().filter(|e| one_lines.contains(e)).copied().collect();
+	    let c02_zeros: HashSet<usize> = c02_lines.iter().filter(|e| zero_lines.contains(e)).copied().collect();
 	    if c02_ones.len() >= c02_zeros.len() {
 		c02_lines = c02_zeros;
 	    } else {

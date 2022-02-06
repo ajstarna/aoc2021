@@ -6,7 +6,7 @@ use std::io::{BufRead};
 
 /// each board is a 5x5 bingo board represented in row-major
 /// we check each row and each column for five -1s (indicating the numbers has been called)
-fn check_win(board: & Vec<i32>) -> bool {
+fn check_win(board: &[i32]) -> bool {
     let mut row_start = 0;
     while row_start < board.len() {
 	if board[row_start..row_start+5].iter().all(|x| *x == -1) {
@@ -32,49 +32,47 @@ fn part1() {
     let mut board_opt: Option<Vec<i32>> = None; // holds the current board as we read it in
     let mut scores: Vec<Option<i32>> = Vec::new(); // keep track of the score for each board when it won
     let mut winning_indices: Vec<Option<usize>> = Vec::new(); // keep track on which turn each board won
-    for (i, line) in buffered.lines().enumerate() {
-	if let Ok(line) = line {
-	    if i == 0 {
-		let numbers = line.split(',').map(|x| x.parse::<i32>().unwrap()).collect();
-		println!("numbers = {:?}", numbers);
-		numbers_opt = Some(numbers);
-		continue;
+    for (i, line) in buffered.lines().flatten().enumerate() {
+	if i == 0 {
+	    let numbers = line.split(',').map(|x| x.parse::<i32>().unwrap()).collect();
+	    println!("numbers = {:?}", numbers);
+	    numbers_opt = Some(numbers);
+	    continue;
+	}
+	if line.is_empty() {
+	    if let Some(ref mut board) = board_opt {
+		println!("before {:?}", board);
+		let mut winner_flag = false;
+		for (count, num) in numbers_opt.as_ref().unwrap().iter().enumerate() {
+		    for item in board.iter_mut() {
+			if *item == *num {
+			    *item = -1; // indicate it was a winner
+			}
+		    }
+		    if check_win(board) {
+			winner_flag = true;
+			let remaining_sum: i32 = board.iter().filter(|x| **x != -1).sum();
+			let score = remaining_sum * num;
+			scores.push(Some(score));
+			winning_indices.push(Some(count));
+			break;
+		    }
+		}
+		if !winner_flag {
+		    scores.push(None);
+		    winning_indices.push(None);
+		}
+		println!("after {:?}", board);		    
 	    }
-	    if line == "" {
-		if let Some(ref mut board) = board_opt {
-		    println!("before {:?}", board);
-		    let mut winner_flag = false;
-		    for (count, num) in numbers_opt.as_ref().unwrap().iter().enumerate() {
-			for i in 0..board.len() {
-			    if board[i] == *num {
-				board[i] = -1; // indicate it was a winner
-			    }
-			}
-			if check_win(board) {
-			    winner_flag = true;
-			    let remaining_sum: i32 = board.iter().filter(|x| **x != -1).sum();
-			    let score = remaining_sum * num;
-			    scores.push(Some(score));
-			    winning_indices.push(Some(count));
-			    break;
-			}
-		    }
-		    if !winner_flag {
-			scores.push(None);
-			winning_indices.push(None);
-		    }
-		    println!("after {:?}", board);		    
-		}
-		// start a new board
-		board_opt = Some(Vec::new());
-		
-	    } else {
-		// read in part of the current board
-		let mut split: Vec<i32> = line.split_whitespace().map(|x| x.parse::<i32>().unwrap()).collect();
-		if let Some(ref mut board) = board_opt {
-		    // should always be a board available in this case
-		    board.append(&mut split);
-		}
+	    // start a new board
+	    board_opt = Some(Vec::new());
+
+	} else {
+	    // read in part of the current board
+	    let mut split: Vec<i32> = line.split_whitespace().map(|x| x.parse::<i32>().unwrap()).collect();
+	    if let Some(ref mut board) = board_opt {
+		// should always be a board available in this case
+		board.append(&mut split);
 	    }
 	}
     }
