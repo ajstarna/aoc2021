@@ -4,7 +4,7 @@ use std::io::{BufRead};
 
 
 fn part1() {
-    let buffered = get_buffered_reader(2);
+    let buffered = get_buffered_reader("2");
     let mut horizontal = 0;
     let mut depth = 0;
     for line in buffered.lines().flatten() {
@@ -24,7 +24,7 @@ fn part1() {
 }
 
 fn part2() {
-    let buffered = get_buffered_reader(2);
+    let buffered = get_buffered_reader("2");
     let mut horizontal = 0;
     let mut depth = 0;
     let mut aim = 0;    

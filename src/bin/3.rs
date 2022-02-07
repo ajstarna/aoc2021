@@ -4,7 +4,7 @@ use std::io::{BufRead};
 use std::collections::HashSet;
 
 fn part1() {
-    let buffered = get_buffered_reader(3);
+    let buffered = get_buffered_reader("3");
     let num_bits = 12;
     let mut sums = vec![0; num_bits]; // each value represents the sum for a given bit across all rows
     let mut num_lines = 0;
@@ -43,7 +43,7 @@ fn part1() {
 }
 
 fn part2() {
-    let buffered = get_buffered_reader(3);
+    let buffered = get_buffered_reader("3");
     let num_bits = 12;
     // let mut sums = vec![0; num_bits]; // each value represents the sum for a given bit across all rows
     let mut num_lines = 0;

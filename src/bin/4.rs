@@ -20,14 +20,13 @@ fn check_win(board: &[i32]) -> bool {
 	    println!("col win starting at {:?}", col_start);
 	    return true;
 	}
-	row_start += 5
     }
     
     false
 }
 
 fn part1() {
-    let buffered = get_buffered_reader(4);
+    let buffered = get_buffered_reader("4");
     let mut numbers_opt: Option<Vec<i32>> = None; // we only assing this once when i == 0. but have to make it mutable i guess compiler isn't smart enough?
     let mut board_opt: Option<Vec<i32>> = None; // holds the current board as we read it in
     let mut scores: Vec<Option<i32>> = Vec::new(); // keep track of the score for each board when it won

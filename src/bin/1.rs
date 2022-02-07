@@ -4,7 +4,7 @@ use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
 
 fn part1() {
-    let buffered = get_buffered_reader(1);
+    let buffered = get_buffered_reader("1");
     let mut previous: Option<i32> = None;
     let mut total = 0;
     for line in buffered.lines().flatten() {
@@ -20,7 +20,7 @@ fn part1() {
 }
 
 fn part2 () {
-    let buffered = get_buffered_reader(1);    
+    let buffered = get_buffered_reader("1");    
     let mut total = 0;
 
     let mut nums = VecDeque::new();
