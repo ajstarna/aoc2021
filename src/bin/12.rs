@@ -213,6 +213,9 @@ fn part2 () {
     let mut graph = read_graph();
     graph.print();
     println!("graph = {:?}", graph);
+    // we get the results from traverse_from_start() like part1, this gives us the paths that can only visit a small once,
+    // then we add traverse_from_start_special_small() to the result, since those are the paths that always go through a small twice.
+    // combined, this gives us the desired output
     let num_paths = graph.traverse_from_start_special_small() + graph.traverse_from_start();
     dbg!(num_paths);
     
