@@ -30,7 +30,10 @@ fn read_file() -> (HashSet<(u32, u32)>, Vec<(char, u32)>) {
 fn part1() {
     let (points, commands) = read_file();
     dbg!(points);
-    dbg!(commands);    
+    dbg!(commands);
+    for command in commands {
+	let b: u8 = command;
+    }
 }
 
 fn part2 () {    
