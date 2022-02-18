@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
+use std::cmp::Ordering;
 
 /// gives a buffered reader to iterate over for the lines of a file
 /// {day}.txt in the data folder.
@@ -9,7 +10,6 @@ pub fn get_buffered_reader(day: &str) -> BufReader<File>{
     BufReader::new(input)
 }
 
-
 /// Grid contains a row-major vec and the width of one row
 #[derive(Debug)]
 pub struct Grid<T> {
@@ -17,10 +17,18 @@ pub struct Grid<T> {
     pub width: usize, // keeps track of the width, i.e. when the next row begins in the data
 }
 
-impl<T: std::clone::Clone + From<u32>> Grid<T> {
+impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug> Grid<T> {
 
     pub fn len(&self) -> usize {
 	self.nums.len()
+    }
+    
+    pub fn set(&mut self, index: usize, value: T) {
+	self.nums[index] = value;
+    }
+    
+    pub fn get(&self, index: usize) -> T {
+	self.nums[index]
     }
     
     /// reads the given file and returns a grid. We assume each position is a single numeric haracter 
@@ -53,7 +61,7 @@ impl<T: std::clone::Clone + From<u32>> Grid<T> {
     
     /// given an indix in the grid, returns a Vector containing all adjacent indices,
     /// If "include_diagonal" == true, including diagonal above and below. At most 8 possible adjacents if we are not on any edges.
-    fn get_adjacent_indices(&self, idx: usize, include_diagonal: bool) -> Vec<usize> {
+    pub fn get_adjacent_indices(&self, idx: usize, include_diagonal: bool) -> Vec<usize> {
 	let mut adjacents = Vec::new();
 	let is_top_row = idx < self.width;
 	let is_bottom_row = idx >= self.nums.len() - self.width;	
@@ -98,7 +106,24 @@ impl<T: std::clone::Clone + From<u32>> Grid<T> {
 		}
 	    }
 	}
-	adjacents
-	
+	adjacents	
     }
+
+    pub fn pretty_print(&self) {
+	for (i, val) in self.nums.iter().enumerate() {
+	    print!("{:?} ", val);
+	    /*
+	    if i % self.width < 40 {
+		print!("{:?} ", val);		
+	    }*/
+	    if i % self.width == self.width - 1 {
+		println!();
+	    }
+	}
+    }
+    /*
+    pub fn print_best_path(&self) {
+	let prev = self.nums[self.nums.len()-1];
+    }*/
+    
 }
