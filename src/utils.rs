@@ -10,18 +10,23 @@ pub fn get_buffered_reader(day: &str) -> BufReader<File>{
 }
 
 
-///G rid contains a row-major vec and the width of one row
-struct Grid {
-    nums: Vec<u32>, // all the data
-    width: usize, // keeps track of the width, i.e. when the next row begins in the data
+/// Grid contains a row-major vec and the width of one row
+#[derive(Debug)]
+pub struct Grid<T> {
+    nums: Vec<T>, // all the data
+    pub width: usize, // keeps track of the width, i.e. when the next row begins in the data
 }
 
-impl Grid {
+impl<T: std::clone::Clone + From<u32>> Grid<T> {
 
+    pub fn len(&self) -> usize {
+	self.nums.len()
+    }
+    
     /// reads the given file and returns a grid. We assume each position is a single numeric haracter 
-    fn new_grid_from_file(file_prefix: &str) -> Self {
+    pub fn new_from_file(file_prefix: &str) -> Self {
 	let buffered = get_buffered_reader(file_prefix);
-	let mut nums = Vec::new(); // to store the grid of number
+	let mut nums = Vec::<T>::new(); // to store the grid of number
 	// first go through each
 	let mut width = None;
 	for line in buffered.lines().flatten() {
@@ -31,18 +36,16 @@ impl Grid {
 		width = Some(line.len());
 	    }
 	    for num in line.chars() {
-		nums.push(num.to_digit(10).unwrap());
+		nums.push(T::from(num.to_digit(10).unwrap()));
 	    }
 	}
 	let width = width.unwrap();
-	println!("nums = {:?}", nums);
-	println!("width = {:?}", width);
 	Self { nums, width }
     }
 
-    /// return a new grid with all zero values for a given length and width
-    fn new_zeros(length: usize, width: usize) -> Self {
-	let nums = vec![0; length];
+    /// return a new grid with all the same given value values for a given length and width
+    pub fn new(length: usize, width: usize, value: T) -> Self {
+	let nums = vec![value; length];
 	Self {nums, width}
     }
     
