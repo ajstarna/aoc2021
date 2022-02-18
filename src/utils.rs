@@ -36,6 +36,8 @@ impl<T: std::clone::Clone + From<u32>> Grid<T> {
 		width = Some(line.len());
 	    }
 	    for num in line.chars() {
+		// this is why we enforce From<u32>, since to_digit() returns that, but maybe there is
+		// a better way to do this?
 		nums.push(T::from(num.to_digit(10).unwrap()));
 	    }
 	}
