@@ -59,7 +59,7 @@ fn read_file_v2() -> (HashMap<(char, char), u64>, HashMap<(char, char), char>, c
 
 /// given a mutable template and some rules, we iterate over all the rules and apply them to the template
 /// The rules take effect at the "same" time.
-fn process_step(template: &mut Vec<char>, rules: &Vec<(char, char, char)>) {
+fn process_step(template: &mut Vec<char>, rules: &[(char, char, char)]) {
     let mut insertions = Vec::new();
     for i in 0..template.len() - 1 {
 	for rule in rules {
@@ -71,14 +71,11 @@ fn process_step(template: &mut Vec<char>, rules: &Vec<(char, char, char)>) {
 	}
     }
     insertions.sort_by(|a, b| a.1.cmp(&b.1)); // sort by the index that we will insert
-    //println!("insertions = {:?}", insertions);
     // now do the insertions in order. As we apply them, the indices of the following insertions goes up
-    let mut count = 0;
-    for insertion in insertions {
+    for (count, insertion) in insertions.iter().enumerate() {
 	let (letter, mut idx) = insertion;
 	idx += count;
-	template.insert(idx, letter);
-	count += 1;
+	template.insert(idx, *letter);
     }
 }
 

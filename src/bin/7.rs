@@ -28,7 +28,7 @@ fn part1() {
 
 
 /// given a postion that we want to move all the numbers to, we determine how much fuel that will take
-fn determine_fuel_part_2(position: i32, nums: &Vec<i32>) -> f64{
+fn determine_fuel_part_2(position: i32, nums: &[i32]) -> f64{
     let dist: Vec<i32> = nums.iter().map(|&x| (x - position).abs()).collect(); //map(|x| (x + 1) * (x / 2)).sum();
     // println!("dist = {:?}", dist);        
     let fuel: f64 = dist.iter().map(|&x| (x as f64 + 1.) * (x as f64 / 2.)).sum();

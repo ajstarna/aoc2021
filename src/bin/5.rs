@@ -43,7 +43,6 @@ impl Line {
 /// the grid vec represents a row x col 2d plane of values
 struct Grid {
     grid: Vec<i32>,
-    rows: usize,
     cols: usize,
 }
 
@@ -51,7 +50,7 @@ impl Grid {
 
     fn new(rows: usize, cols: usize) -> Self {
 	let grid = vec![0; rows * cols];   	
-	Grid { grid, rows, cols }
+	Grid { grid, cols }
     }
 			
     /// given a line from point to point,

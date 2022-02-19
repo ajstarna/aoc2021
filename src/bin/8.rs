@@ -104,26 +104,23 @@ fn part2() {
 	    
 	for signal in inputs.iter().chain(outputs.iter()) {
 	    let chars: HashSet<char> = HashSet::from_iter(signal.chars());
-	    match signal.len() {
-		5 => {
-		    // either 2, 3, 5
-		    // we already know 3
-		    if chars == digit_chars[3] {
-			();
-		    } else if digit_chars[9].intersection(&chars).count() == chars.len() {
-			// 9 covers 5 as well
-			for x in signal.chars() {
-			    digit_chars[5].insert(x);
-			}
-		    } else {
-			// 2 is the last remaining digit of length five (and it does not get covered by 9)
-			for x in signal.chars() {
-			    digit_chars[2].insert(x);
-			}
+	    if signal.len() == 5 {
+		// either 2, 3, 5
+		// we already know 3
+		if chars == digit_chars[3] {
+		} else if digit_chars[9].intersection(&chars).count() == chars.len() {
+		    // 9 covers 5 as well
+		    for x in signal.chars() {
+			digit_chars[5].insert(x);
 		    }
-		},
-		_ => (),
+		} else {
+		    // 2 is the last remaining digit of length five (and it does not get covered by 9)
+		    for x in signal.chars() {
+			digit_chars[2].insert(x);
+		    }
+		}
 	    }
+
 	}
 		
 	//println!("all digit chars = {:?}", digit_chars);	

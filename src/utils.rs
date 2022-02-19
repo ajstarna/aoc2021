@@ -23,6 +23,10 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
 	self.nums.len()
     }
     
+    pub fn is_empty(&self) -> bool {
+	self.len() == 0
+    }
+    
     pub fn set(&mut self, index: usize, value: T) {
 	self.nums[index] = value;
     }
@@ -38,7 +42,7 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
 	// first go through each
 	let mut width = None;
 	for line in buffered.lines().flatten() {
-	    if let None = width {
+	    if width.is_none() {
 		// since every line has the same length, we can just figure out the
 		// width once on the very first line and set width
 		width = Some(line.len());
@@ -127,7 +131,7 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
 	// first go through each
 	let mut width = None;
 	for line in buffered.lines().flatten() {
-	    if let None = width {
+	    if width.is_none() {
 		// since every line has the same length, we can just figure out the
 		// width once on the very first line and set width
 		width = Some(line.len() * 5);

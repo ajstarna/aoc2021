@@ -99,7 +99,7 @@ fn read_grid() -> Grid {
     // first go through each
     let mut width = None;
     for line in buffered.lines().flatten() {
-	if let None = width {
+	if width.is_none() {
 	    // since every line has the same length, we can just figure out the
 	    // width once on the very first line and set width
 	    width = Some(line.len());

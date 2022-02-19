@@ -63,7 +63,7 @@ fn fold(points: &mut HashSet<(u32, u32)>, num: u32, axis: char) {
 	}
 		
     }
-    points.retain(|x| to_keep.contains(&x));
+    points.retain(|x| to_keep.contains(x));
     for new in to_add {
 	points.insert(new);
     }
@@ -75,8 +75,8 @@ fn display_points(points: &HashSet<(u32, u32)>) {
     let max_x = points.iter().map(|x| x.0).max().unwrap() + 1; // we add 1 because we also have 0,0
     let max_y = points.iter().map(|x| x.1).max().unwrap() + 1;
     println!("max x = {:?}, max y = {:?}", max_x, max_y);
-    let mut x = 0;
-    let mut y = 0;    
+    let mut x;
+    let mut y;
     for i in 0..(max_x * max_y) {
 	x = i % max_x;
 	y = i / max_x;

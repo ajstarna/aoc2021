@@ -1,6 +1,5 @@
 use std::env;
-use aoc2021::utils::{get_buffered_reader, Grid};
-use std::io::{BufRead};
+use aoc2021::utils::{Grid};
 use std::collections::HashSet;
 use std::cmp::Ordering::Equal;    
 
@@ -36,12 +35,8 @@ fn run(times_five: bool ) {
 	visit_queue.remove(&shortest);
 	complete.insert(shortest);	
 	let shortest_d = distances.get(shortest);
-	//println!("shortest = {:?}, with distance = {:?}", shortest, shortest_d);	
 	let adjacents = values.get_adjacent_indices(shortest, INCLUDE_DIAGONAL);
-	//let unvisited: Vec<usize> = adjacents.iter().filter(|&x| visit_queue.contains(x)).map(|x| *x).collect(); // still needs to be officially visited
-	let unvisited: Vec<usize> = adjacents.iter().filter(|&x| !complete.contains(x)).map(|x| *x).collect(); // still needs to be officially visited	
-	//println!("adj = {:?}", adjacents);	
-	//println!("unvisited = {:?}", unvisited);
+	let unvisited: Vec<usize> = adjacents.iter().filter(|&x| !complete.contains(x)).copied().collect(); // still needs to be officially visited	
 
 	for neighbour in unvisited {
 	    visit_queue.insert(neighbour);	    

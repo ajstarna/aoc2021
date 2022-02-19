@@ -13,7 +13,6 @@ struct Graph {
     capital_indices: HashSet<usize>,
     start_idx: usize,
     end_idx: usize,
-    all_paths: HashSet<String>,
 }
 
 impl Graph {
@@ -42,8 +41,7 @@ impl Graph {
 	}
 	let start_idx = start_idx_opt.unwrap();
 	let end_idx = end_idx_opt.unwrap();
-	let all_paths = HashSet::new();
-	Self {matrix, num_nodes, idx_to_name, name_to_idx, capital_indices, start_idx, end_idx, all_paths}
+	Self {matrix, num_nodes, idx_to_name, name_to_idx, capital_indices, start_idx, end_idx}
     }
     
     /// add an edge for two given nodes.
@@ -56,22 +54,15 @@ impl Graph {
     }
 
     /// given a path of indices, prints it out as node names
-    fn pretty_path(&self, path: &Vec<usize>) {
+    fn pretty_path(&self, path: &[usize]) {
 	println!();
 	//let path_string: Vec<String> = path.iter().map(|x| *self.idx_to_name.get(x).unwrap().clone()).collect();//   .join("-");	
 	//println!("{:?}", path_string);
 	for idx in path {
 	    let name = self.idx_to_name.get(idx).unwrap();
 	    print!("{}-", name);
-	    //names.push(&"-".to_string());	    
 	}
     }
-
-    /*
-    /// given a path of indices, add it as one string to self.all_paths
-    fn add_to_all_paths(&self, path: &Vec<usize>) {
-	let path_string = path.join("-");
-    }*/
     
     fn print(&self) {
 	for (i, val) in self.matrix.iter().enumerate() {
@@ -87,17 +78,15 @@ impl Graph {
     }
 
     fn traverse_from_start(&self) -> u32 {
-	let mut starting_path = Vec::new();
-	starting_path.push(self.start_idx);
-	let mut starting_cannot_return = HashSet::new();	
+	let starting_path = vec![self.start_idx];
+	let starting_cannot_return = HashSet::new();	
 	self.traverse(starting_path, starting_cannot_return, None)
     }
 
     // here we count paths where any single small letter cave occurs EXACTLY twice
     fn traverse_from_start_special_small(&self) -> u32 {
-	let mut starting_path = Vec::new();
-	starting_path.push(self.start_idx);
-	let mut starting_cannot_return = HashSet::new();
+	let starting_path = vec![self.start_idx];	
+	let starting_cannot_return = HashSet::new();
 	let mut all_special_paths = 0;
 	for idx in 0..self.num_nodes {
 	    if idx != self.start_idx && idx != self.end_idx && !self.capital_indices.contains(&idx) {
@@ -143,7 +132,7 @@ impl Graph {
 	    }
 	}
 	
-	if !self.capital_indices.contains(&last_idx) {
+	if !self.capital_indices.contains(last_idx) {
 	    // if the current cave is not capital, then likely indicate that we can never return
 	    if let Some(idx) = special_idx {
 
@@ -202,7 +191,7 @@ fn read_graph() -> Graph {
 }
 
 fn part1() {
-    let mut graph = read_graph();
+    let graph = read_graph();
     graph.print();
     println!("graph = {:?}", graph);
     let num_paths = graph.traverse_from_start();
@@ -210,7 +199,7 @@ fn part1() {
 }
 
 fn part2 () {
-    let mut graph = read_graph();
+    let graph = read_graph();
     graph.print();
     println!("graph = {:?}", graph);
     // we get the results from traverse_from_start() like part1, this gives us the paths that can only visit a small once,

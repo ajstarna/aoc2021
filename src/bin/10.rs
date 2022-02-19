@@ -2,14 +2,13 @@ use std::env;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
 use std::collections::HashMap;
-use std::array::IntoIter;
 
 fn run() {
     let buffered = get_buffered_reader("10");
     let mut total_score_invalid = 0;
-    let score_map_invalid = HashMap::<char, u128>::from_iter(IntoIter::new([(')', 3), (']', 57), ('}', 1197), ('>', 25137)])); // each illegal character has its own score
-    let score_map_completion = HashMap::<char, u128>::from_iter(IntoIter::new([(')', 1), (']', 2), ('}', 3), ('>', 4)])); // each character has its own score to complete it
-    let chunk_pairs = HashMap::<char, char>::from_iter(IntoIter::new([('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')])); // which open and closes go together
+    let score_map_invalid = HashMap::<char, u128>::from_iter([(')', 3), (']', 57), ('}', 1197), ('>', 25137)].into_iter()); // each illegal character has its own score
+    let score_map_completion = HashMap::<char, u128>::from_iter([(')', 1), (']', 2), ('}', 3), ('>', 4)].into_iter()); // each character has its own score to complete it
+    let chunk_pairs = HashMap::<char, char>::from_iter([('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')].into_iter()); // which open and closes go together
     let mut all_completion_scores = Vec::new();
     for line in buffered.lines().flatten() {
 	//dbg!(line.chars());
@@ -25,12 +24,8 @@ fn run() {
 		let top = stack.pop();
 		//println!("popped {:?}", top);		
 		if let Some(chunk_open) = top {
-		    if chunk_pairs.get(&chunk_open).unwrap() == &c {
+		    if chunk_pairs.get(&chunk_open).unwrap() != &c {
 			// what we wanted to see to be valid
-			();
-		    } else {
-			// invalid non-match
-			//println!("invalid non-match at {:?}", c);
 			valid = false;
 		    }
 		} else {
@@ -54,15 +49,15 @@ fn run() {
 	    for c in stack.iter().rev() {
 		//dbg!(completion_score);
 		completion_score *= 5;
-		let required = chunk_pairs.get(&c).unwrap();
-		completion_score += score_map_completion.get(&required).unwrap();
+		let required = chunk_pairs.get(c).unwrap();
+		completion_score += score_map_completion.get(required).unwrap();
 	    }
 	    dbg!(completion_score);
 	    all_completion_scores.push(completion_score);
 	}
     }
     println!("total score for invalid lines = {:?}", total_score_invalid); 
-    all_completion_scores.sort();
+    all_completion_scores.sort_unstable();
     let mid_idx = (all_completion_scores.len() as f64 / 2.).floor() as usize;
     println!("mid completion score = {:?}", all_completion_scores[mid_idx]);
     

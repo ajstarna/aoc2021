@@ -82,22 +82,20 @@ fn count_family(timer: u32, days: u32) -> u32 {
 
 fn run_part_2(total_days: u32) {
     let buffered = get_buffered_reader("6");
-    for line in buffered.lines().flatten() {
+    if let Some(line) = buffered.lines().flatten().next() {
 	let final_count: u32 = line.split(',').map(|x| x.parse::<u32>().unwrap()).map(|timer| count_family(timer, total_days)).sum();
 	println!("after {} days, the number of fish = {}", total_days, final_count);
-	break; //should only be one line
     }
 }
 
 fn run_part_3(total_days: u32) {
     let buffered = get_buffered_reader("6");
     let mut fish_counts: Vec<u64> = vec![0; 9]; // each index represents the count of fish with their respective timer at that amount
-    for line in buffered.lines().flatten() {
+    if let Some(line) = buffered.lines().flatten().next() {	
 	let start_times: Vec<usize> = line.split(',').map(|x| x.parse::<usize>().unwrap()).collect();
 	for time in start_times {
 	    fish_counts[time] += 1;
 	}
-	break; //should only be one line
     }
 
     for _day in 0..total_days {

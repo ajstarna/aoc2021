@@ -10,7 +10,7 @@ fn read_grid() -> (Vec<u32>, usize) {
     // first go through each
     let mut width = None;
     for line in buffered.lines().flatten() {
-	if let None = width {
+	if width.is_none() {
 	    // since every line has the same length, we can just figure out the
 	    // width once on the very first line and set width
 	    width = Some(line.len());
@@ -25,7 +25,7 @@ fn read_grid() -> (Vec<u32>, usize) {
     println!("width = {:?}", width);
     (grid, width)
 }
-fn find_low_indices(grid: &Vec<u32>, width: usize) -> Vec<usize> {
+fn find_low_indices(grid: &[u32], width: usize) -> Vec<usize> {
     // go over the grid and look for low spots.
     // the the numbers to the left, right, above, and below are higher than
     // a number, it is a low spot. A number being on the "edge" of the grid only has
@@ -73,10 +73,9 @@ fn part1() {
 /// "9" indicates the borders between basins
 /// We visit the basin in a depth first manor, where we pop from the end of the visit queue, thus
 /// diving deeper into the last candidate we see every time
-fn scope_out_basin(grid: &Vec<u32>, width: usize, low_idx: usize) -> HashSet<usize> {
+fn scope_out_basin(grid: &[u32], width: usize, low_idx: usize) -> HashSet<usize> {
     let mut basin = HashSet::new();
-    let mut visit_queue = Vec::new();
-    visit_queue.push(low_idx);
+    let mut visit_queue = vec![low_idx];
     while let Some(idx) = visit_queue.pop() {
 	basin.insert(idx);
 	let num = grid[idx];
@@ -142,13 +141,13 @@ fn part2() {
 	    }
 	}
 	println!("after: {:?}", to_replace_num);
-	if let Some(to_replace_num_inner) = to_replace_num {
+	if to_replace_num.is_some() {
 	    top_lens[to_replace_idx.unwrap()] = current_len;
 	    println!("top lens after replace = {:?}", top_lens);	    
 	}
     }
     println!("top lengths = {:?}", top_lens);
-    println!("multiplied = {:?}", top_lens.iter().map(|&x| x).product::<usize>());
+    println!("multiplied = {:?}", top_lens.iter().product::<usize>());
     
 }
 
