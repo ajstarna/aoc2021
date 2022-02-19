@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
-use std::cmp::Ordering;
 
 /// gives a buffered reader to iterate over for the lines of a file
 /// {day}.txt in the data folder.
@@ -17,7 +16,8 @@ pub struct Grid<T> {
     pub width: usize, // keeps track of the width, i.e. when the next row begins in the data
 }
 
-impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug> Grid<T> {
+impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
+     std::ops::Add<Output = T> + std::cmp::PartialOrd + std::ops::Rem<Output = T>> Grid<T> {
 
     pub fn len(&self) -> usize {
 	self.nums.len()
@@ -112,18 +112,63 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug> Gri
     pub fn pretty_print(&self) {
 	for (i, val) in self.nums.iter().enumerate() {
 	    print!("{:?} ", val);
-	    /*
-	    if i % self.width < 40 {
-		print!("{:?} ", val);		
-	    }*/
 	    if i % self.width == self.width - 1 {
 		println!();
 	    }
 	}
     }
-    /*
-    pub fn print_best_path(&self) {
-	let prev = self.nums[self.nums.len()-1];
-    }*/
+
+
+    /// reads the given file and returns a grid. We assume each position is a single numeric character
+    /// this multiples the grid to be 5x bigger in each dimension (as required for day 15 part 2)
+    pub fn new_from_file_5x(file_prefix: &str) -> Self {
+	let buffered = get_buffered_reader(file_prefix);
+	let mut nums = Vec::<T>::new(); // to store the grid of number
+	// first go through each
+	let mut width = None;
+	for line in buffered.lines().flatten() {
+	    if let None = width {
+		// since every line has the same length, we can just figure out the
+		// width once on the very first line and set width
+		width = Some(line.len() * 5);
+	    }
+	    for extra in 0..5 {
+		// for each increment 0, 1,2,3,4 we add the current line + extra
+		for num in line.chars() {
+		    // this is why we enforce From<u32>, since to_digit() returns that, but maybe there is
+		    // a better way to do this?
+		    let mut extra_num = T::from(num.to_digit(10).unwrap()) + T::from(extra);
+		    if extra_num > T::from(9) {
+			// loop from 9 back to 1
+			extra_num = (extra_num % T::from(10)) + T::from(1);
+		    }
+		    nums.push(extra_num);
+		}
+	    }
+	}
+	let width = width.unwrap();
+	// now we need to times by five in the next dimension	
+	let original_len = nums.len();
+	let mut extra_nums = Vec::<T>::new();
+	for extra in 1..5 {
+	    // for each increment 1,2,3,4 we add the current full rows + extra
+	    for num in nums.iter().take(original_len) {
+		// this is why we enforce From<u32>, since to_digit() returns that, but maybe there is
+		// a better way to do this?
+		let mut extra_num = *num + T::from(extra);
+		if extra_num > T::from(9) {
+		    // loop from 9 back to 1
+		    extra_num = (extra_num % T::from(10)) + T::from(1);
+		}
+		extra_nums.push(extra_num);
+	    }
+	}
+
+	// finally, extend the original nums with the extra_nums
+	nums.extend(extra_nums.iter());
+	
+	Self { nums, width }
+    }
+    
     
 }
