@@ -20,7 +20,7 @@ impl ExplosionReturn {
 }
  */
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum SnailFish {
     Regular(u32),
     Pair{ a : Box<SnailFish>, b: Box<SnailFish> },
@@ -85,12 +85,12 @@ impl SnailFish {
     fn reduce(&mut self) -> bool {
 	let result = self.check_explode(1);
 	if result.did_explode {
-	    println!("did explode");
+	    //println!("did explode");
 	    return true;
 	}
 	let (did_split_any, _) = self.check_split();
 	if did_split_any {
-	    println!("did split");	    
+	    //println!("did split");	    
 	    return true;
 	}
 	false
@@ -98,8 +98,8 @@ impl SnailFish {
 
     fn full_reduction(&mut self) {
 	while self.reduce() {
-	    println!("after one reduction");
-	    self.pretty_print();
+	    //println!("after one reduction");
+	    //self.pretty_print();
 	}
     }
     
@@ -244,9 +244,9 @@ fn read_file() -> Vec<SnailFish> {
 }
 
 
-fn run() {
+fn run1() {
     let all_fish = read_file();
-    println!("all fish = {:?}", all_fish);
+    //println!("all fish = {:?}", all_fish);
     let mut acc = None;
     for fish in all_fish.into_iter() {
 	let mut current = match acc.is_none() {
@@ -286,14 +286,45 @@ fn run() {
      */
 }
 
+fn run2() {
+    let mut max_mag = 0;
+    let all_fish1 = read_file();
+    //println!("all fish = {:?}", all_fish1);
+    let mut all_fish2 = read_file();
+    //println!("all fish2 = {:?}", all_fish2);
+    for (i, fish1_outer) in  all_fish1.iter().enumerate() {
+	println!("i = {}", i);
+	for j in i+1..all_fish2.len() {
+	    let fish1 = fish1_outer.clone();		    
+	    let fish2 = all_fish2[j].clone();	    
+	    println!("comparing one way");
+	    let mut current = SnailFish::add(fish1, fish2);	
+	    current.full_reduction();
+	    let mag = current.magnitude();
+	    max_mag = u32::max(max_mag, mag);
+
+
+	    let fish1 = fish1_outer.clone();		    
+	    let fish2 = all_fish2[j].clone();	    
+	    println!("comparing one way");
+	    let mut current = SnailFish::add(fish2, fish1);	
+	    current.full_reduction();
+	    let mag = current.magnitude();
+	    max_mag = u32::max(max_mag, mag);
+	    
+	}
+    }
+    println!("max mag = {}", max_mag);
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     assert!(args.len() == 2);    
     let part = &args[1];
     println!("part = {}", part);
     match part.as_str() {
-	"1" => run(),
-	"2" => run(),
+	"1" => run1(),
+	"2" => run2(),
 	_ => panic!("invalid part number argument!"),
     }
 }
