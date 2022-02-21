@@ -27,6 +27,13 @@ enum SnailFish {
 }
 
 impl SnailFish {
+    fn magnitude(&self) -> u32 {
+	match self {
+	    SnailFish::Regular(val) => *val,
+	    SnailFish::Pair{a, b} =>  3 * a.magnitude() + 2 * b.magnitude(),
+	}	
+    }
+    
     fn recursive_pretty(&self) {
 	match self {
 	    SnailFish::Regular(val) => print!("{}", *val),
@@ -227,7 +234,7 @@ fn construct_snailfish(input: &str) -> Option<SnailFish> {
 
 // read in the file and return a TargetArea
 fn read_file() -> Vec<SnailFish> {
-    let buffered = get_buffered_reader("18-small");
+    let buffered = get_buffered_reader("18");
     let mut all_fish = Vec::new();
     for line in buffered.lines().flatten() {
 	// each line represents a snailfish number
@@ -268,6 +275,7 @@ fn run() {
     let mut t = acc.unwrap();
     t.full_reduction();
     t.pretty_print();
+    println!("final magnitude = {:?}", t.magnitude());
     /*
     let final_result = all_fish
 	.iter()
