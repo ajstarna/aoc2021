@@ -1,6 +1,7 @@
 // Note: I based this solution on a solution outlined in https://www.reddit.com/r/adventofcode/comments/rjwhdv/2021_day19_i_need_help_understanding_how_to_solve/ by ignotos
 // This is the first day I really struggled with solving and just wanted to move on from
 use std::env;
+use std::collections::HashSet;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
 use regex::Regex;
@@ -91,7 +92,7 @@ impl Scanner {
 	    for beacon2 in rotation.iter() {
 		if Beacon::add(*beacon1, offset) == *beacon2 {
 		    //println!("found a match from {:?} to {:?} with offset {:?}", beacon1, beacon2, offset);
-		    matched_beacons.push(*beacon2);
+		    matched_beacons.push(*beacon1);
 		}
 	    }		
 	}
@@ -103,8 +104,8 @@ impl Scanner {
     }
     
     /// given another scanner determine the orientation of that scanner that lines up with the first
-    /// We return an option that stores the index of the matching rotation, and the associated offset
-    fn find_rotation_match(&self, other: &Scanner) -> Option<(usize, Beacon)> {
+    /// We return an option that stores the matched beacons, index of the matching rotation, and the associated offset
+    fn find_beacon_matches(&self, other: &Scanner) -> Option<(Vec<Beacon>, usize, Beacon)> {
 	for (rotation_index, rotation) in other.all_rotations.iter().enumerate() {
 	    // for this orientation, we check if we can line up 12 points using the same offset
 	    for (self_index, beacon1) in self.beacons.iter().enumerate() {	
@@ -114,7 +115,7 @@ impl Scanner {
 		    // beacons that have this offset
 		    let matched_beacons = self.find_beacon_matches_for_offset(&rotation, offset);
 		    if matched_beacons.len() == 12 {
-			return Some((rotation_index, offset));
+			return Some((matched_beacons, rotation_index, offset));
 		    }
 		    
 		}
@@ -165,30 +166,61 @@ fn run1() {
     for scanner in all_scanners.iter_mut() {
 	scanner.calculate_distances();
     }
+    // scanner 0 is special, we treat it as the baseline. So we indicate its 0th rotation (i.e. no rotation), and
+    // a 0 offset is all it needs.
+    all_scanners[0].rotation_and_offset_from_0 = Some((0, Beacon(0, 0, 0)));
+						      
     let mut was_change: bool = true;
-    let known_scanners = vec![all_scanners[0].clone()]; // we know scanner zero
+    //let mut all_known_beacons = Vec::new();
+    let mut known_scanners =vec![all_scanners[0].clone()]; // we know scanner zero
+    let mut comparisons_already_made = HashSet::new(); // keep track of which scanners we have compare so that we don't check that pair again (i, j) tuples
+    all_scanners.remove(0);
     while was_change {
 	was_change = false;
-	for (i, scanner1) in known_scanners.iter().enumerate() {
-	    println!("scanner1 = {:?}", scanner1);
-	    for (j, scanner2) in all_scanners[1..].iter().enumerate() {
+	//println!("known scanners = {:?}", known_scanners);	
+	let mut newly_known_scanners = Vec::new();
+	let mut newly_known_scanner_nums = HashSet::new();	
+	//println!("remaining unknown scanners = {:?}", all_scanners);
+	for scanner1 in known_scanners.iter() {
+	    //println!("scanner1 = {:?}", scanner1);
+	    for scanner2 in all_scanners.iter() {
 		//println!("scanner2 = {:?}", scanner2);
+		if comparisons_already_made.contains(&(scanner1.number, scanner2.number)) {
+		    println!("already compared {} and {}", scanner1.number, scanner2.number);
+		    continue;
+		} else {
+		    println!("comparing {} and {} for the first time", scanner1.number, scanner2.number);		    
+		    comparisons_already_made.insert((scanner1.number, scanner2.number));
+		}
 		let common = compare_scanners(scanner1, scanner2);
-		println!("scanner {} and {} have {} distances in common", i, j+1, common);
+		println!("scanner {} and {} have {} distances in common", scanner1.number, scanner2.number, common);
 		if common == 66 {
 		    // 12 choose 2 = 66, so there are 12 pairs in common and therefore 66 distances in common
 		    // we know from the question that 12 pairs in common is what we are looking for
-		    if let Some((rotation_index, offset)) = scanner1.find_rotation_match(scanner2){
+		    if let Some((matched_beacons, rotation_index, offset)) = scanner1.find_beacon_matches(scanner2){
+			// we found matches, so this scanner will become known
+			was_change = true;
+			println!("scanner {:?} is now known", scanner2.number);
+			newly_known_scanners.push(scanner2.clone());
+			newly_known_scanner_nums.insert(scanner2.number);			
+
+			/*
 			let mut new_2 = scanner2.clone();
 			new_2.rotation_and_offset_from_0 = Some((rotation_index, offset));
+			for beacon in matched_beacons {
+			    let offset_from_0 = match scanner2.
+		        }*/
 		    } else {
 			eprintln!("we should have been able to find an appropriate rotation and offset!");
 		    }
 		}
 	    }
 	}
+	known_scanners.extend(newly_known_scanners);
+	all_scanners = all_scanners.into_iter().filter(|x| !newly_known_scanner_nums.contains(&x.number)).collect();
     }
 }
+
 
 fn run2() {
 }
