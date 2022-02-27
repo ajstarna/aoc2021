@@ -173,6 +173,35 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
 	
 	Self { nums, width }
     }
-    
+
+    /// reads the given file and returns a grid.
+    /// Each position is either a # or a . to represent light or dark pixels
+    /// We will store them as 1 or zero, respectively
+    pub fn new_from_file_day_20(file_prefix: &str) -> Self {
+	let buffered = get_buffered_reader(file_prefix);
+	let mut nums = Vec::<T>::new(); // to store the grid of number
+	// first go through each
+	let mut width = None;
+	for line in buffered.lines().flatten() {
+	    if width.is_none() {
+		// since every line has the same length, we can just figure out the
+		// width once on the very first line and set width
+		width = Some(line.len());
+	    }
+	    for val in line.chars() {
+		// this is why we enforce From<u32>, since to_digit() returns that, but maybe there is
+		// a better way to do this?
+		match val {
+		    '#' => nums.push(T::from(1)),
+		    '.' => nums.push(T::from(0)),
+		    _ => panic!("unknown char in file: {:?}", val)
+		}
+
+	    }
+	}
+	let width = width.unwrap();
+	Self { nums, width }
+    }
+
     
 }
