@@ -14,6 +14,10 @@ impl Beacon {
 	((i32::pow(beacon1.0 - beacon2.0, 2) + i32::pow(beacon1.1 - beacon2.1, 2) + i32::pow(beacon1.2 - beacon2.2, 2)) as f64).sqrt()
     }
 
+    fn manhattan_distance(beacon1: Beacon, beacon2: Beacon) -> i32 {
+	(beacon1.0 - beacon2.0).abs() + (beacon1.1 - beacon2.1).abs() +(beacon1.2 - beacon2.2).abs()
+    }
+
     // beacon1 - beacon2, treated like vector subtraction
     fn subtract(beacon1: Beacon, beacon2: Beacon) -> Beacon {
 	Beacon(beacon1.0 - beacon2.0, beacon1.1 - beacon2.1, beacon1.2 - beacon2.2)
@@ -143,7 +147,7 @@ impl Scanner {
 
 // read in the file and return a vec of scanners, where the index is the scanner num from the file
 fn read_file() -> Vec<Scanner> {
-    let buffered = get_buffered_reader("19-small");
+    let buffered = get_buffered_reader("19");
     let re = Regex::new(r"([-\d]+),([-\d]+),([-\d]+)").unwrap();
     
     let mut all_scanners = Vec::new();
@@ -200,7 +204,7 @@ fn run1() {
     
     // to start, simply add the beacons from scanner 0 as-is
     for beacon in &all_scanners[0].beacons {
-	println!("in scanner 0, adding beacon = {:?}", beacon);	
+	//println!("in scanner 0, adding beacon = {:?}", beacon);	
 	all_relative_beacons.insert(*beacon);
     }
     
@@ -238,7 +242,7 @@ fn run1() {
 			
 			for final_beacon in scanner2.all_rotations[rotation_index].iter() { 
 			    let final_relative_beacon = Beacon::subtract(*final_beacon, offset); // now the beacon is relative to scaner 0
-			    println!("in scanner {:?}, adding relative beacon = {:?}", scanner2.number, final_relative_beacon);
+			    //println!("in scanner {:?}, adding relative beacon = {:?}", scanner2.number, final_relative_beacon);
 			    all_relative_beacons.insert(final_relative_beacon);
 			}
 
@@ -259,16 +263,17 @@ fn run1() {
 
 
     // for part 2 we need the manhattan distane between all the offsets
+    let mut max_man = 0;
     for (i, offset1) in all_offsets.iter().enumerate() {
 	for offset2 in all_offsets[i+1..].iter() {
-	    println!("comparing offsets {:?} and {:?}", offset1, offset2
+	    let man =  Beacon::manhattan_distance(*offset1, *offset2);
+	    println!("comparing offsets {:?} and {:?}: manhattan = {:?}", offset1, offset2, man);
+	    max_man = std::cmp::max(max_man, man);
 	}
     }
+    println!("max manhattan distance = {:?}", max_man);
 }
 
-
-fn run2() {
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -277,7 +282,7 @@ fn main() {
     println!("part = {}", part);
     match part.as_str() {
 	"1" => run1(),
-	"2" => run2(),
+	"2" => run1(),
 	_ => panic!("invalid part number argument!"),
     }
 }
