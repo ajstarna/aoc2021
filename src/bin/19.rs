@@ -143,7 +143,7 @@ impl Scanner {
 
 // read in the file and return a vec of scanners, where the index is the scanner num from the file
 fn read_file() -> Vec<Scanner> {
-    let buffered = get_buffered_reader("19");
+    let buffered = get_buffered_reader("19-small");
     let re = Regex::new(r"([-\d]+),([-\d]+),([-\d]+)").unwrap();
     
     let mut all_scanners = Vec::new();
@@ -196,7 +196,9 @@ fn run1() {
 
 
     let mut all_relative_beacons = HashSet::new(); // holds all the beacson, relative to sanner 0
-    // to staet, simply add the beacons from scanner 0 as-is
+    let mut all_offsets = Vec::new();
+    
+    // to start, simply add the beacons from scanner 0 as-is
     for beacon in &all_scanners[0].beacons {
 	println!("in scanner 0, adding beacon = {:?}", beacon);	
 	all_relative_beacons.insert(*beacon);
@@ -210,28 +212,23 @@ fn run1() {
 	for scanner1 in known_scanners.iter() {
 	    for scanner2 in & mut all_scanners {
 		if comparisons_already_made.contains(&(scanner1.number, scanner2.number)) {
-		    println!("already compared {} and {}", scanner1.number, scanner2.number);
+		    //println!("already compared {} and {}", scanner1.number, scanner2.number);
 		    continue;
 		} else {
 		    println!("comparing {} and {} for the first time", scanner1.number, scanner2.number);		    
 		    comparisons_already_made.insert((scanner1.number, scanner2.number));
 		}
 		let common = compare_scanners(scanner1, &scanner2);
-		println!("scanner {} and {} have {} distances in common", scanner1.number, scanner2.number, common);
+		//println!("scanner {} and {} have {} distances in common", scanner1.number, scanner2.number, common);
 		if common == 66 {
 		    // 12 choose 2 = 66, so there are 12 pairs in common and therefore 66 distances in common
 		    // we know from the question that 12 pairs in common is what we are looking for
 		    if let Some((matched_beacons, rotation_index, offset)) = scanner1.find_beacon_matches(&scanner2){
 			// we found matches, so this scanner will become known
 			was_change = true;
+			all_offsets.push(offset);
 			println!("matched_beacons = {:?}", matched_beacons);
 			println!("scanner {:?} is now known at rotation index = {:?} and offset = {:?}", scanner2.number, rotation_index, offset);
-
-			// to get the total offset from 0, we need to account from our offset to scanner 1 on top of scanner 1s offset to 
-			//let (_scanner_1_rotation, scanner_1_offset) = scanner1.rotation_and_offset_from_0.unwrap();
-			//let offset_to_0 = Beacon::add(offset, scanner_1_offset); 
-			//println!("scanner {:?} is now known at rotation index = {:?} and relative offset = {:?}", scanner2.number, rotation_index, offset_to_0);
-			
 			scanner2.rotation_and_offset_from_0 = Some((rotation_index, offset));
 			
 			newly_known_scanners.push(scanner2.clone());
@@ -258,7 +255,15 @@ fn run1() {
     println!("all matched beacons = {:?}", all_matched_beacons);
     println!("all matched beacons.len() = {:?}", all_matched_beacons.len());    
     println!("all relative beacons = {:?}", all_relative_beacons);
-    println!("all relative beacons.len() = {:?}", all_relative_beacons.len());    
+    println!("all relative beacons.len() = {:?}", all_relative_beacons.len());
+
+
+    // for part 2 we need the manhattan distane between all the offsets
+    for (i, offset1) in all_offsets.iter().enumerate() {
+	for offset2 in all_offsets[i+1..].iter() {
+	    println!("comparing offsets {:?} and {:?}", offset1, offset2
+	}
+    }
 }
 
 
