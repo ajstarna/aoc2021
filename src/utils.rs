@@ -65,49 +65,55 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
     
     /// given an indix in the grid, returns a Vector containing all adjacent indices,
     /// If "include_diagonal" == true, including diagonal above and below. At most 8 possible adjacents if we are not on any edges.
-    pub fn get_adjacent_indices(&self, idx: usize, include_diagonal: bool) -> Vec<usize> {
+    /// If "include_self" == true, then we include our self, this makes the return a 3 by 3 grid (see day 20)
+    pub fn get_adjacent_indices(&self, idx: usize, include_diagonal: bool, include_self: bool) -> Vec<usize> {
 	let mut adjacents = Vec::new();
 	let is_top_row = idx < self.width;
 	let is_bottom_row = idx >= self.nums.len() - self.width;	
 	let is_left_edge = idx % self.width == 0;
 	let is_right_edge = idx % self.width == self.width - 1;
+	
+	if !is_top_row {
+	    if include_diagonal && !is_left_edge {
+		// adjacent above left		
+		    adjacents.push(idx - self.width - 1);
+	    }
+
+	    // adjacent above
+	    adjacents.push(idx - self.width);
+	    
+	    // adjacent above right				
+	    if include_diagonal && !is_right_edge {
+		adjacents.push(idx - self.width + 1);
+	    }
+	}
 
 	if !is_left_edge {
 	    // adjacent to the left
 	    adjacents.push(idx - 1);	    
 	}
+
+	if include_self {
+	    adjacents.push(idx);
+	}
+	
 	if !is_right_edge {
 	    // adjacent to the right	    
 	    adjacents.push(idx + 1);	    
 	}
 	
-	if !is_top_row {
-	    // adjacent above
-	    adjacents.push(idx - self.width);
-	    if include_diagonal {
-		// adjacent above left		
-		if !is_left_edge {
-		    adjacents.push(idx - self.width - 1)
-		}
-		// adjacent above right				
-		if !is_right_edge {
-		    adjacents.push(idx - self.width + 1)		
-		}
-	    }
-	}
-
 	if !is_bottom_row {
+	    if include_diagonal && !is_left_edge {
+		// adjacent below left			    
+		    adjacents.push(idx + self.width - 1);
+	    }
+
 	    // adjacent below	    
 	    adjacents.push(idx + self.width);
-	    if include_diagonal {
-		// adjacent below left			    
-		if !is_left_edge {
-		    adjacents.push(idx + self.width - 1)
-		}
-		// adjacent below right				
-		if !is_right_edge {
-		    adjacents.push(idx + self.width + 1)		
-		}
+	    
+	    // adjacent below right				
+	    if include_diagonal && !is_right_edge {
+		adjacents.push(idx + self.width + 1);		
 	    }
 	}
 	adjacents	

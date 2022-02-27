@@ -27,7 +27,8 @@ fn run(times_five: bool ) {
     let mut visit_queue = HashSet::<usize>::new(); // the visit queue holds indices that are within range of our current exploration bounds
     let mut complete = HashSet::<usize>::new(); // holds the indices that have officially been visited and are now part of our exploration bounds
     visit_queue.insert(0);
-    const INCLUDE_DIAGONAL: bool = false;        
+    const INCLUDE_DIAGONAL: bool = false;
+    const INCLUDE_SELF: bool = false;            
     while !visit_queue.is_empty(){
 	println!("len of complete = {:?}", complete.len());
 	let shortest: usize = *visit_queue.iter()
@@ -35,7 +36,7 @@ fn run(times_five: bool ) {
 	visit_queue.remove(&shortest);
 	complete.insert(shortest);	
 	let shortest_d = distances.get(shortest);
-	let adjacents = values.get_adjacent_indices(shortest, INCLUDE_DIAGONAL);
+	let adjacents = values.get_adjacent_indices(shortest, INCLUDE_DIAGONAL, INCLUDE_SELF);
 	let unvisited: Vec<usize> = adjacents.iter().filter(|&x| !complete.contains(x)).copied().collect(); // still needs to be officially visited	
 
 	for neighbour in unvisited {
