@@ -12,7 +12,7 @@ pub fn get_buffered_reader(day: &str) -> BufReader<File>{
 /// Grid contains a row-major vec and the width of one row
 #[derive(Debug)]
 pub struct Grid<T> {
-    nums: Vec<T>, // all the data
+    pub nums: Vec<T>, // all the data
     pub width: usize, // keeps track of the width, i.e. when the next row begins in the data
 }
 
@@ -34,7 +34,7 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
     pub fn get(&self, index: usize) -> T {
 	self.nums[index]
     }
-    
+
     /// reads the given file and returns a grid. We assume each position is a single numeric haracter 
     pub fn new_from_file(file_prefix: &str) -> Self {
 	let buffered = get_buffered_reader(file_prefix);
@@ -183,7 +183,8 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
     /// reads the given file and returns a grid.
     /// Each position is either a # or a . to represent light or dark pixels
     /// We will store them as 1 or zero, respectively
-    pub fn new_from_file_day_20(file_prefix: &str) -> Self {
+    /// the buffer is how many extra rows and columns we want or either side of the input (to represent an infinite amount of space)
+    pub fn new_from_file_day_20(file_prefix: &str, buffer: usize) -> Self {
 	let buffered = get_buffered_reader(file_prefix);
 	let mut nums = Vec::<T>::new(); // to store the grid of number
 	// first go through each
@@ -192,8 +193,18 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
 	    if width.is_none() {
 		// since every line has the same length, we can just figure out the
 		// width once on the very first line and set width
-		width = Some(line.len());
+		width = Some(line.len() + buffer *2);
+		// we haven't started reading in yet, so we can add the buffer of 0s to start the grid
+		for _ in 0..width.unwrap() * buffer {
+		    nums.push(T::from(0));
+		}
 	    }
+
+	    // add buffer on the left
+	    for _ in 0..buffer {
+		nums.push(T::from(0));
+	    }
+	    
 	    for val in line.chars() {
 		// this is why we enforce From<u32>, since to_digit() returns that, but maybe there is
 		// a better way to do this?
@@ -202,9 +213,20 @@ impl<T: std::clone::Clone + std::marker::Copy + From<u32> + std::fmt::Debug +
 		    '.' => nums.push(T::from(0)),
 		    _ => panic!("unknown char in file: {:?}", val)
 		}
-
 	    }
+
+	    // add buffer on the right
+	    for _ in 0..buffer {
+		nums.push(T::from(0));		    		
+	    }
+	    
 	}
+
+	// bottom buffer rows
+	for _ in 0..width.unwrap() * buffer {
+	    nums.push(T::from(0));
+	}
+	
 	let width = width.unwrap();
 	Self { nums, width }
     }
