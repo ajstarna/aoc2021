@@ -57,14 +57,15 @@ fn get_all_enhancement_values(grid: &Grid<u32>, algo: &Vec<u8>) -> HashMap<usize
 }
 
 fn run( ) {
-    let buffer = 300; // how mant extra columns and rows on either end
+    let buffer = 51; // how mant extra columns and rows on either end
     let mut grid = Grid::<u32>::new_from_file_day_20("20-image", buffer); // not the most optimum, but storing as <u32> for now since already built
     //grid.pretty_print();
     let algo = read_algo();
     println!("algo = {:?}", algo);
 
     let num_steps = 50;
-    for _ in 0..num_steps {
+    for i in 0..num_steps {
+	println!("step num = {}", i);
 	let all_values = get_all_enhancement_values(&grid, &algo);
 	//println!("all values = {:?}", all_values);
 	for (idx, val) in all_values {
