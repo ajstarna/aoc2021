@@ -10,6 +10,12 @@ struct Player {
     score: u32,
 }
 
+#[derive(Debug, Clone)]
+struct PlayerDirac {
+    position: u32, // the position is between 0 and 9 (to make the modulo easier), even though in the puzzle, they represent 1..=10
+    scores: HashMap<u32, u32>, a mapping from score total, to number of universes with that score presently
+}
+
 impl Player {
     /// given an amount to move the player, we move them this many steps and update the position accordingly
     /// this also increments the score by the new position landed on
@@ -21,7 +27,7 @@ impl Player {
 
 // read the players in from file with their starting positions and score set to 0, then return as a vec
 fn read_file() -> Vec<Player> {
-    let buffered = get_buffered_reader("21");
+    let buffered = get_buffered_reader("21-small");
     let re = Regex::new(r"Player (\d+) starting position: (\d+)").unwrap();
     let mut players = Vec::new();
     
@@ -61,7 +67,7 @@ impl Die {
     }
 }
 
-fn run( ) {
+fn run1( ) {
     let mut players = read_file();
     println!("players = {:?}", players);
 
@@ -91,14 +97,38 @@ fn run( ) {
     println!("min score * total dice rolls = {:?}", min *die.total_rolls);    
 }
 
+/// a game can simply be represented as 2 Player structs, each eith their position and score
+/// As there become more an more games with the Dirac roll, more games will end up in smilar states, so we can count them together
+#[derive(Hash)]
+struct Game {
+    p0: Player,
+    p1: Player,
+}
+
+fn run2( ) {
+    let mut players = read_file();
+    println!("players = {:?}", players);
+
+    let mut all_games = HashMap::new(); // counts how many games with an identical state there are
+    let starting_game = Game {players[0], players[1]};
+    all_games.insert(starting_game, 0);
+    loop {
+	let new_games = HashMap::new();
+	if new_games.len() == 0 {
+	    // no new games were spawned, i.e. all the current games are done
+	    break;
+	}
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     assert!(args.len() == 2);    
     let part = &args[1];
     println!("part = {}", part);
     match part.as_str() {
-	"1" => run(),
-	"2" => run(),
+	"1" => run1(),
+	"2" => run2(),
 	_ => panic!("invalid part number argument!"),
     }
 }
