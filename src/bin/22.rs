@@ -77,28 +77,8 @@ impl Step {
 }
 
 
-/// for part two. we use a "sparse" grid that is just a hashmap actually, so no need for usize
-#[derive(Debug)]
-struct Step2 {
-    status: bool,
-    x: (i32, i32),
-    y: (i32, i32),
-    z: (i32, i32),    
-}
-
-impl Step2 {
-    fn new(status: bool, x_start: i32, x_end: i32, y_start: i32, y_end: i32, z_start: i32, z_end: i32) -> Self {
-	Self {
-	    status: status,
-	    x: (x_start, x_end),
-	    y: (y_start, y_end),
-	    z: (z_start, z_end),		
-	}
-    }
-}
-
 // read the steps in line by line
-fn read_file<T>(part2: bool) -> Vec<T> {
+fn read_file() -> Vec<Step> {
     let buffered = get_buffered_reader("22-small");
     // e.g. on x=-20..26,y=-36..17,z=-47..7
     let re = Regex::new(r"(\w+) x=([-\d]+)..([-\d]+),y=([-\d]+)..([-\d]+),z=([-\d]+)..([-\d]+)").unwrap();
@@ -118,18 +98,11 @@ fn read_file<T>(part2: bool) -> Vec<T> {
 	    let z_start = caps[6].parse::<i32>().unwrap();
 	    let z_end = caps[7].parse::<i32>().unwrap();
 
-	    if part2 {
-		let step = Step::new(status, x_start, x_end, y_start, y_end, z_start, z_end);
-		steps.push(step);				    
+	    if let Some(step) = Step::try_new(status, x_start, x_end, y_start, y_end, z_start, z_end) {
+		steps.push(step);		
 	    } else {
-		if let Some(step) = T::try_new(status, x_start, x_end, y_start, y_end, z_start, z_end) {
-		    steps.push(step);		
-		} else {
-		    println!("range fully out of area in some dimension: {}", line);
-		}
+		println!("range fully out of area in some dimension: {}", line);
 	    }
-
-
 	} else {
 	    panic!("cannot parse line: {}", line);
 	}
@@ -146,9 +119,153 @@ fn run1( ) {
     println!("after the steps, there are {} cubes turned on", grid.count_on());
 }
 
-fn run2( ) {
-    let grid = Grid3d::new(50, false);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// Full refactor below for part 2 ///////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/// an "off" cuboid as Zero volume in itself,
+/// an "on" cuboid will have Positive volume,
+/// and an "intersection" cuboid will either have Positive or Negative, depending if it came from a Negative or Positive, respectively
+/// A negative-volume cube represents that we are "double counting" this volume, so we need to also subtract volume to even out at the end,
+/// example, if two positive (on) cubes intersect, we can sum up their individual volumes, then subtract the double-counted intersection,
+/// This process applies back and forth with more and more intersections, see: https://en.wikipedia.org/wiki/Inclusion%E2%80%93exclusion_principle
+/// Note: I had to use reddit for help, where I got the hint about the inclusion/exclusion principle
+#[derive(Debug)]
+enum VolumeType {
+    Positive,
+    Negative,
+    Zero,
+}
+
+#[derive(Debug)]
+struct Cuboid {
+    //status: bool,
+    volume_type: VolumeType,    
+    x: (i64, i64),
+    y: (i64, i64),
+    z: (i64, i64),
+    volume: i64,
+
+}
+
+impl Cuboid {
+    fn new(volume_type: VolumeType, x_start: i64, x_end: i64, y_start: i64, y_end: i64, z_start: i64, z_end: i64) -> Self {
+	let volume = match volume_type {
+	    // we add 1 to the volume calculations, since there is always at least 1 volume (10..12 is 3 cubes, not exactly like the Rust range)
+	    VolumeType::Positive => (1 + x_end - x_start) * (1+ y_end - y_start) * ( 1+ z_end - z_start),
+	    VolumeType::Negative => -((1 + x_end - x_start) * (1 + y_end - y_start) * (1 + z_end - z_start)),
+	    VolumeType::Zero => 0,
+	};
+	Self {
+	    volume_type: volume_type,
+	    x: (x_start, x_end),
+	    y: (y_start, y_end),
+	    z: (z_start, z_end),
+	    volume: volume
+	}
+    }
+
+
+    /// given another cuboid, this method finds the intersecting Cuboid and returns it (or None)
+    fn find_intersection(&self, other: &Cuboid) -> Option<Self> {
+	let Cuboid { volume_type, x,  y, z, .. } = other;
+	let new_x_start = std::cmp::max(self.x.0, x.0);
+	let new_x_end = std::cmp::min(self.x.1, x.1);
+	if new_x_start > new_x_end {
+	    // Note: we can allow the "equal to" case, since the cube itself has 1 volume (this was a bug I had at first with >= here)
+	    //println!("no intersection in the x dimension");
+	    return None;
+	}
+	let new_y_start = std::cmp::max(self.y.0, y.0);
+	let new_y_end = std::cmp::min(self.y.1, y.1);
+	if new_y_start > new_y_end {
+	    //println!("no intersection in the y dimension");
+	    return None;
+	}
+	let new_z_start = std::cmp::max(self.z.0, z.0);
+	let new_z_end = std::cmp::min(self.z.1, z.1);
+	if new_z_start > new_z_end {
+	    //println!("no intersection in the z dimension");
+	    return None;
+	}
+
+	// if we made it this far, we have some intersection in all dimensions
+	// the volume type just swaps postive and negative, there should be no zero volume
+	let new_volume_type = match volume_type {
+	    VolumeType::Positive => VolumeType::Negative, 
+	    VolumeType::Negative => VolumeType::Positive, 
+	    VolumeType::Zero => {eprintln!("you should not be finding an intersection with a zero-volume cuboid!"); VolumeType::Zero},
+	};
+	Some(Cuboid::new(new_volume_type, new_x_start, new_x_end, new_y_start, new_y_end, new_z_start, new_z_end))
+    }
+}
+// read the steps in line by line as cuboids
+fn read_file2() -> Vec<Cuboid> { //(Vec<Cuboid>, Vec<Cuboid>) {
+    let buffered = get_buffered_reader("22-small");
+    // e.g. on x=-20..26,y=-36..17,z=-47..7
+    let re = Regex::new(r"(\w+) x=([-\d]+)..([-\d]+),y=([-\d]+)..([-\d]+),z=([-\d]+)..([-\d]+)").unwrap();
+    let mut cuboids = Vec::new();
     
+    for line in buffered.lines().flatten() {
+	if let Some(caps) = re.captures(&line) {
+	    let volume_type = match &caps[1] {
+		"on" => VolumeType::Positive,
+		"off" => VolumeType::Zero,
+		_ => panic!("invalid status on line: {}", line),
+	    };
+	    let x_start = caps[2].parse::<i64>().unwrap();
+	    let x_end = caps[3].parse::<i64>().unwrap();
+	    let y_start = caps[4].parse::<i64>().unwrap();
+	    let y_end = caps[5].parse::<i64>().unwrap();
+	    let z_start = caps[6].parse::<i64>().unwrap();
+	    let z_end = caps[7].parse::<i64>().unwrap();
+
+	    let cuboid = Cuboid::new(volume_type, x_start, x_end, y_start, y_end, z_start, z_end) ;
+	    cuboids.push(cuboid);
+
+	} else {
+	    panic!("cannot parse line: {}", line);
+	}
+    }    
+    //(on_cuboids, off_cuboids)
+    cuboids
+}
+
+fn run2( ) {
+    let cuboids = read_file2();
+    let mut final_cuboids = Vec::new(); // final cuboids will hold all the read cuboids, and also all the "intersection" cuboids that get created
+    println!("cuboids = {:?}", cuboids);
+    for input_cuboid in cuboids {
+	// for each input cuboid, compare with each final cuboid to add any needed intersection
+	println!("\n\ninput cuboid = {:?}", input_cuboid);
+	let mut new_intersections = Vec::new();
+	for f_cuboid in &final_cuboids {
+	    if let Some(intersection) = input_cuboid.find_intersection(f_cuboid) {
+		new_intersections.push(intersection);
+	    }
+	}
+
+	// append the new cuboid and any created intersections
+	if let VolumeType::Zero = input_cuboid.volume_type {
+	    // the "off" cuboids dont have a volume at the end, and any new cuboid we look at won't really interact, since off is sorta just the null state
+	    println!("do not push a zero type (i.e. 'off' step) cuboid to final vec");
+	} else {
+	    final_cuboids.push(input_cuboid);
+	}
+	//println!("new_intersections = {:?}", new_intersections);
+	final_cuboids.extend(new_intersections);
+    }
+    //println!("final cuboids = {:?}", final_cuboids);
+    // we simply sum the volumes of the final_cuboids to see how many cubes are turned on
+    let final_on: i64 = final_cuboids.iter().map(|x| x.volume).sum();
+    println!("final on cubes = {:?}", final_on);
 }
 
 fn main() {
