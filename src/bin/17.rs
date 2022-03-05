@@ -1,4 +1,5 @@
 use std::env;
+use std::cmp::Ordering;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
 use regex::Regex;
@@ -35,11 +36,13 @@ impl Probe {
 	self.x += self.vx;
 	self.y += self.vy;
 	self.max_y = std::cmp::max(self.y, self.max_y);
-	if self.vx > 0 {
-	    self.vx -= 1;
-	} else if self.vx < 0 {
-	    self.vx += 1;	    
+
+	match self.vx.cmp(&0) {
+	    Ordering::Greater => self.vx -= 1,
+	    Ordering::Less => self.vx += 1,
+	    _ => (),
 	}
+	
 	self.vy -= 1;
     }
 }

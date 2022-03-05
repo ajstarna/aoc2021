@@ -57,7 +57,7 @@ impl SnailFish {
     fn get_numeric_val(&self) -> Option<u32> {
 	match self {
 	    SnailFish::Regular(val) => Some(*val),
-	    SnailFish::Pair{a, b} => None,
+	    SnailFish::Pair{ .. } => None,
 	}	
     }
 
@@ -68,14 +68,14 @@ impl SnailFish {
     fn add_num_from_right(&mut self, num: u32) {
 	match self {
 	    SnailFish::Regular(val) => *val += num,
-	    SnailFish::Pair{a, b} => b.add_num_from_right(num),
+	    SnailFish::Pair{b, ..} => b.add_num_from_right(num),
 	}
     }
 
     fn add_num_from_left(&mut self, num: u32) {
 	match self {
 	    SnailFish::Regular(val) => *val += num,
-	    SnailFish::Pair{a, b} => a.add_num_from_left(num),
+	    SnailFish::Pair{a, ..} => a.add_num_from_left(num),
 	}
     }
 
@@ -109,17 +109,17 @@ impl SnailFish {
 	//println!("check explode for {:?} at depth = {:?}", self, depth);
 	
 	match self {
-	    SnailFish::Regular(_) => return ExplosionReturn {did_explode: false, immediate_explode: false, left_val: 0, right_val: 0},
+	    SnailFish::Regular(_) => ExplosionReturn {did_explode: false, immediate_explode: false, left_val: 0, right_val: 0},
 	    SnailFish::Pair{a, b} => {
 		if depth == 5 {
 		    // time to explode!
 		    //println!("time to explode! {:?}, {:?}", a, b);
 		    
-		    return ExplosionReturn {
+		    ExplosionReturn {
 			did_explode: true,
 			immediate_explode: true,
 			left_val: a.get_numeric_val().unwrap(), // we can unwrap, since only a pair of regular fish can explode
-			right_val: b.get_numeric_val().unwrap()};
+			right_val: b.get_numeric_val().unwrap()}
 		} else {
 		    let ExplosionReturn {did_explode, immediate_explode, left_val, mut right_val} =  a.check_explode(depth + 1);
 		    //println!("did_explode from a = {:?}", did_explode);
@@ -133,7 +133,7 @@ impl SnailFish {
 		    }
 		    if did_explode {
 			// short circuit if the left side exploded
-			return ExplosionReturn {did_explode: did_explode, immediate_explode: false, left_val: left_val, right_val: right_val};
+			return ExplosionReturn {did_explode, immediate_explode: false, left_val, right_val};
 		    }
 		    
 		    let ExplosionReturn {did_explode, immediate_explode, mut left_val, right_val} =  b.check_explode(depth + 1);
@@ -146,7 +146,7 @@ impl SnailFish {
 			// if a exploded, the new a is just a regular(0)
 			*b = Box::new(SnailFish::Regular(0));
 		    }
-		    return ExplosionReturn {did_explode: did_explode, immediate_explode: false, left_val: left_val, right_val: right_val};
+		    ExplosionReturn {did_explode, immediate_explode: false, left_val, right_val}
 		}
 	    }
 	}
@@ -156,7 +156,7 @@ impl SnailFish {
 	//println!("check split for {:?}", self);
 	
 	match self {
-	    SnailFish::Regular(val) => {return (*val > 9, *val > 9);},
+	    SnailFish::Regular(val) => (*val > 9, *val > 9),
 	    SnailFish::Pair{a, b} => {
 		let (did_split_any, did_split_immediate) = a.check_split();
 		//println!("did_split_immediate from a = {:?}", did_split_immediate);
@@ -169,7 +169,7 @@ impl SnailFish {
 			b: Box::new(SnailFish::Regular(right))});
 		}
 		if did_split_any {
-		    return (true, false);		    
+		    return (true, false);
 		}
 		
 		let (did_split_any, did_split_immediate) = b.check_split();		
@@ -184,7 +184,7 @@ impl SnailFish {
 			    b: Box::new(SnailFish::Regular(right)) }
 		    );
 		}
-		return (did_split_any, false);
+		(did_split_any, false)
 		
 	    }
 	}
@@ -208,7 +208,7 @@ fn construct_snailfish(input: &str) -> Option<SnailFish> {
     // this will occur when there is a comma found when we have exaclty one open brace
     //println!("inside construct_sailfish: {:?}", input);
     let re = Regex::new(r"^([\d]+)$").unwrap();    
-    if let Some(caps) = re.captures(&input) {
+    if let Some(caps) = re.captures(input) {
 	let num = caps[1].parse::<u32>().unwrap();
 	return Some(SnailFish::Regular(num));
     }
@@ -257,16 +257,16 @@ fn run1() {
 	    false => acc.unwrap(),
 	};
 	
-	println!("\nacc before:");
+	//println!("\nacc before:");
 	current.pretty_print();
 	
 	current = SnailFish::add(current, fish);
 	
-	println!("after addition:");
+	//println!("after addition:");
 	current.pretty_print();
 	
 	current.full_reduction();
-	println!("after reduction:");
+	//println!("after reduction:");
 	current.pretty_print();
 	acc = Some(current);
     }
@@ -290,13 +290,13 @@ fn run2() {
     let mut max_mag = 0;
     let all_fish1 = read_file();
     //println!("all fish = {:?}", all_fish1);
-    let mut all_fish2 = read_file();
+    let all_fish2 = read_file();
     //println!("all fish2 = {:?}", all_fish2);
     for (i, fish1_outer) in  all_fish1.iter().enumerate() {
 	println!("i = {}", i);
-	for j in i+1..all_fish2.len() {
+	for fish2_inner in all_fish2.iter().skip(i+1) {
 	    let fish1 = fish1_outer.clone();		    
-	    let fish2 = all_fish2[j].clone();	    
+	    let fish2 = fish2_inner.clone();	    
 	    println!("comparing one way");
 	    let mut current = SnailFish::add(fish1, fish2);	
 	    current.full_reduction();
@@ -305,7 +305,7 @@ fn run2() {
 
 
 	    let fish1 = fish1_outer.clone();		    
-	    let fish2 = all_fish2[j].clone();	    
+	    let fish2 = fish2_inner.clone();	    	    
 	    println!("comparing one way");
 	    let mut current = SnailFish::add(fish2, fish1);	
 	    current.full_reduction();

@@ -41,7 +41,7 @@ struct Scanner {
 impl Scanner {
     fn new(number: usize) -> Self {	
 	Self {
-	    number: number,
+	    number,
 	    beacons: Vec::<Beacon>::new(),
 	    distances: Vec::<f64>::new(),
 	    all_rotations: vec![Vec::new(); 24],
@@ -97,7 +97,7 @@ impl Scanner {
     }
 
 
-    fn find_beacon_matches_for_offset(&self, rotation: &Vec<Beacon>, other_offset: Beacon) -> Vec<Beacon> {
+    fn find_beacon_matches_for_offset(&self, rotation: &[Beacon], other_offset: Beacon) -> Vec<Beacon> {
 	let mut matched_beacons = Vec::new(); // store the (hopefully 12) beacons from the given rotation that match self.beacons
 	let (rotation_index, my_offset) = self.rotation_and_offset_from_0.unwrap();
 	for beacon1 in self.all_rotations[rotation_index].iter() { 
@@ -125,13 +125,13 @@ impl Scanner {
 	println!("rotation_index = {:?} and my_offset {:?}", rotation_index, my_offset);
 	for (other_rotation_index, rotation) in other.all_rotations.iter().enumerate() {
 	    // for this orientation, we check if we can line up 12 points using the same offset
-	    for (self_index, beacon1) in self.all_rotations[rotation_index].iter().enumerate() {
+	    for beacon1 in self.all_rotations[rotation_index].iter() {
 		let relative_beacon1 = Beacon::subtract(*beacon1, my_offset); // now the beacon is relative to scaner 0		    
 		for beacon2 in rotation.iter() {
 		    let other_offset = Beacon::subtract(*beacon2, relative_beacon1);
 		    // if beacon2 is the same as beacon1, just at this offset, then we should be able to find 12
 		    // beacons that have this offset
-		    let matched_beacons = self.find_beacon_matches_for_offset(&rotation, other_offset);
+		    let matched_beacons = self.find_beacon_matches_for_offset(rotation, other_offset);
 		    if matched_beacons.len() == 12 {
 			return Some((matched_beacons, other_rotation_index, other_offset));
 		    }
@@ -222,12 +222,12 @@ fn run1() {
 		    println!("comparing {} and {} for the first time", scanner1.number, scanner2.number);		    
 		    comparisons_already_made.insert((scanner1.number, scanner2.number));
 		}
-		let common = compare_scanners(scanner1, &scanner2);
+		let common = compare_scanners(scanner1, scanner2);
 		//println!("scanner {} and {} have {} distances in common", scanner1.number, scanner2.number, common);
 		if common == 66 {
 		    // 12 choose 2 = 66, so there are 12 pairs in common and therefore 66 distances in common
 		    // we know from the question that 12 pairs in common is what we are looking for
-		    if let Some((matched_beacons, rotation_index, offset)) = scanner1.find_beacon_matches(&scanner2){
+		    if let Some((matched_beacons, rotation_index, offset)) = scanner1.find_beacon_matches(scanner2){
 			// we found matches, so this scanner will become known
 			was_change = true;
 			all_offsets.push(offset);

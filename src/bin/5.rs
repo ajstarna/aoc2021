@@ -112,7 +112,7 @@ impl Grid {
 
     /// helper method for displaying the grid.
     /// infeasible to use when we have the full sized input file
-    fn print(&self) {
+    fn _print(&self) {
 	for (i, item) in self.grid.iter().enumerate() {
 	    if i % self.cols == 0 {
 		println!();

@@ -169,7 +169,7 @@ fn run2( ) {
 	println!("p1 wins = {}, p2 wins = {}", all_p1_wins, all_p2_wins);
 
 
-	if new_games.len() == 0 {
+	if new_games.is_empty(){
 	    // no new games were spawned, i.e. all the current games are done
 	    println!("no more new games");
 	    break;

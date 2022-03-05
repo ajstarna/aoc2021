@@ -1,5 +1,4 @@
 use std::env;
-use std::collections::HashMap;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
 use regex::Regex;
@@ -67,7 +66,7 @@ impl Step {
 	
 	Some (
 	    Step {
-		status: status,
+		status,
 		x: ((x_start + shift) as usize, (x_end + shift) as usize),
 		y: ((y_start + shift) as usize, (y_end + shift) as usize),
 		z: ((z_start + shift) as usize, (z_end + shift) as usize),		
@@ -164,11 +163,11 @@ impl Cuboid {
 	    VolumeType::Zero => 0,
 	};
 	Self {
-	    volume_type: volume_type,
+	    volume_type,
 	    x: (x_start, x_end),
 	    y: (y_start, y_end),
 	    z: (z_start, z_end),
-	    volume: volume
+	    volume,
 	}
     }
 

@@ -86,7 +86,7 @@ fn process_packet(bits: &BitVec::<Msb0, u8>, start: usize) -> (u64, usize) {
 	    println!("num sub packets = {}", num_sub);
 	    idx = start + 18;
 	    for i in 0..num_sub {
-		let (sub_value, new_idx) = process_packet(&bits, idx);
+		let (sub_value, new_idx) = process_packet(bits, idx);
 		println!("numbered sub count {}, from idx {} = {}", i, idx, sub_value);
 		sub_values.push(sub_value);
 		idx = new_idx;
@@ -102,7 +102,7 @@ fn process_packet(bits: &BitVec::<Msb0, u8>, start: usize) -> (u64, usize) {
 
 	    let mut count = 0;
 	    loop {
-		let (sub_value, new_idx) = process_packet(&bits, idx);
+		let (sub_value, new_idx) = process_packet(bits, idx);
 		println!("length sub count {}, from idx {} = {}", count, idx, sub_value);
 		count += 1;
 		sub_values.push(sub_value);		
@@ -150,16 +150,18 @@ fn process_packet(bits: &BitVec::<Msb0, u8>, start: usize) -> (u64, usize) {
 }
 
 fn run() {
-    let bytes = read_file();
-    println!("bytes = {:?}", bytes);
-    if bytes.is_none() {
-	println!("Unable to parse the file into bytes!");
-	std::process::exit(-1);
-    } else {
-	let bits = BitVec::<Msb0, u8>::from_slice(&bytes.unwrap()).expect("could not convert bytes into bitvec");
+    let bytes_opt = read_file();
+    println!("bytes = {:?}", bytes_opt);
+
+    if let Some(bytes) = bytes_opt {
+	let bits = BitVec::<Msb0, u8>::from_slice(&bytes).expect("could not convert bytes into bitvec");
 	dbg!(&bits);
 	let (value, idx) = process_packet(&bits, 0);
 	println!("value of packet = {}, with the subsequent index = {}", value, idx);
+
+    } else {
+	println!("Unable to parse the file into bytes!");
+	std::process::exit(-1);
     }
 }
 
