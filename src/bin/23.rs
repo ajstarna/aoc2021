@@ -7,16 +7,16 @@ use regex::Regex;
 
 #[derive(Debug, Copy, Clone)]
 enum Amphipod {
-    Amber,
-    Bronze,
-    Copper,
-    Desert,
+    Amber(u32),
+    Bronze(u32),
+    Copper(u32),
+    Desert(u32),
 }
 
 const NUM_SPOTS: usize = 15;
 
 /// the state keeps tracks of what is in each of the 15 rooms
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct State {
     spots: [Option<Amphipod>; NUM_SPOTS],
     energy_spent: u64, // total amount of energy spent by all moves
@@ -40,10 +40,10 @@ impl State {
     fn set(&mut self, index: usize, letter: &str) -> Result<(), io::Error> {
 	assert!(index < NUM_SPOTS);
 	match letter {
-	    "A" => self.spots[index] = Some(Amphipod::Amber),
-	    "B" => self.spots[index] = Some(Amphipod::Bronze),
-	    "C" => self.spots[index] = Some(Amphipod::Copper),
-	    "D" => self.spots[index] = Some(Amphipod::Desert),
+	    "A" => self.spots[index] = Some(Amphipod::Amber(1)),
+	    "B" => self.spots[index] = Some(Amphipod::Bronze(10)),
+	    "C" => self.spots[index] = Some(Amphipod::Copper(100)),
+	    "D" => self.spots[index] = Some(Amphipod::Desert(1000)),
 	    _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("unable to parse {:?} as an Amphipod for index {}", letter, index))),
 	}
 	Ok(())
@@ -53,6 +53,90 @@ impl State {
     fn get_valid_transitions(&self) -> Vec<Self> {
 	Vec::new()
     }
+
+    /// is the game over, i.e. are the colours all in the proper rooms?
+    /// there is likely a better way to write this method?
+    fn is_complete(&self) -> bool {
+	if let (Some(Amphipod::Amber(_)), Some(Amphipod::Amber(_))) = (self.spots[7], self.spots[11]) {
+	    println!("we have amber in spot 7 and 11 like we wanted!");
+	} else {
+	    return false;	    
+	}
+	if let (Some(Amphipod::Bronze(_)), Some(Amphipod::Bronze(_))) = (self.spots[8], self.spots[12]) {
+	    println!("we have bronze in spot 8 and 12 like we wanted!");
+	} else {
+	    return false;
+	}
+	if let (Some(Amphipod::Copper(_)), Some(Amphipod::Copper(_))) = (self.spots[9], self.spots[13]) {
+	    println!("we have copper where we wanted!");
+	} else {
+	    return false;
+	}
+	if let (Some(Amphipod::Desert(_)), Some(Amphipod::Desert(_))) = (self.spots[10], self.spots[14]) {
+	    println!("we have desert where we wanted!");
+	} else {
+	    return false;	    
+	}
+	true
+    }
+    
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    
+    #[test]
+    fn test_is_not_complete1() {
+	let mut state = State::new();
+	assert!(!state.is_complete());
+    }
+    
+    #[test]
+    fn test_is_not_complete2() {
+	let mut state = State::new();
+	state.set(7, "A");
+	state.set(11, "A");	
+	assert!(!state.is_complete());
+    }
+
+    #[test]
+    fn test_is_not_complete3() {
+	let mut state = State::new();
+	state.set(7, "A");
+	state.set(11, "A");	
+	state.set(8, "B");
+	state.set(12, "B");	
+	assert!(!state.is_complete());
+    }
+    
+    #[test]
+    fn test_is_not_complete4() {
+	let mut state = State::new();
+	state.set(7, "A");
+	state.set(11, "A");	
+	state.set(8, "B");
+	state.set(12, "B");	
+	state.set(9, "C");
+	state.set(13, "C");	
+	assert!(!state.is_complete());
+    }
+
+    #[test]
+    fn test_is_complete() {
+	let mut state = State::new();
+	state.set(7, "A");
+	state.set(11, "A");	
+	state.set(8, "B");
+	state.set(12, "B");	
+	state.set(9, "C");
+	state.set(13, "C");	
+	state.set(10, "D");
+	state.set(14, "D");	
+	assert!(state.is_complete());
+    }
+
 }
 
 
@@ -103,15 +187,15 @@ fn run() {
 	);
     println!("{:?}", starting_state);
     let mut search_queue = VecDeque::new();
-    search_queue.push(starting_state);
-    let mut best_energy = 9999999999999999999;
+    search_queue.push_front(starting_state);
+    let mut best_energy = 9999999999999999999_u64;
     while !search_queue.is_empty() {
-	let current_state = search_queue.pop_front();
+	let current_state = search_queue.pop_front().unwrap();
 	let next_states = current_state.get_valid_transitions();
 	for state in next_states {
 	    if state.is_complete() {
 		// see if this state is done and with a new best energy
-		best_energy = cmp::min(best_energy, state.energy_spent);
+		best_energy = std::cmp::min(best_energy, state.energy_spent);
 	    } else if state.energy_spent < best_energy {
 		// this state isn't done, but the energy spent so far is still less than the best energy
 		// TODO: if need be we could keep track of states that we have seen at the given state of Amphipods based on energy,
