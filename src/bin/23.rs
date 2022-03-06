@@ -177,15 +177,8 @@ fn read_file() -> Result<State, io::Error> {
     Ok(starting_state)
 }
 
-fn run() {
-    let starting_state = read_file()
-	.unwrap_or_else(|_|
-			{
-			    eprintln!("bad input! exitinging program");
-			    std::process::exit(-1)
-			}
-	);
-    println!("{:?}", starting_state);
+/// given a starting input state, returns the lowest amount of energy needed to solve it
+fn solve(starting_state: State) -> u64  {
     let mut search_queue = VecDeque::new();
     search_queue.push_front(starting_state);
     let mut best_energy = 9999999999999999999_u64;
@@ -205,6 +198,18 @@ fn run() {
 	    }
 	}
     }
+}
+
+fn run() {
+    let starting_state = read_file()
+	.unwrap_or_else(|_|
+			{
+			    eprintln!("bad input! exitinging program");
+			    std::process::exit(-1)
+			}
+	);
+    println!("{:?}", starting_state);
+    solve(state);
 }
     
 fn main() {
