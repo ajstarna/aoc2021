@@ -1,5 +1,5 @@
 use std::{env, io};
-use std::collections::{HashMap,VecDeque};
+use std::collections::{HashMap};
 use priority_queue::PriorityQueue;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
@@ -69,59 +69,59 @@ impl State {
 	Self {spots: [None; NUM_SPOTS], energy_spent: 0, depth: 0, prev_end: 0}
     }
 
-    // a heuristic of how well the postion is doing.
-    // the highest the score the "worse" the state
+    /// a heuristic of how well the postion is doing.
+    /// the higher the score the "worse" the state
+    /// we take the distance for each amphipod to get to the bottom of its room
+    /// we also add a penalty for each amphipod in the hallway (since a state with more amphiods in their rooms is better)
     fn get_heuristic_energy(&self) -> u64 {
 	let mut score = 0;
 	if let Some(Amphipod{colour, energy}) = self.spots[0] {
+	    //score += 1; // hallway is worse than room	    
+	    score += match colour {
+		Colour::Amber => 4 * energy,
+		Colour::Bronze => 6 * energy,
+		Colour::Copper => 8 * energy,
+		Colour::Desert => 10 * energy,
+	    }
+	}
+	if let Some(Amphipod{colour, energy}) = self.spots[1] {
+	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
 		Colour::Amber => 3 * energy,
 		Colour::Bronze => 5 * energy,
 		Colour::Copper => 7 * energy,
 		Colour::Desert => 9 * energy,
 	    }
-	}
-	if let Some(Amphipod{colour, energy}) = self.spots[1] {
-	    score += match colour {
-		Colour::Amber => 2 * energy,
-		Colour::Bronze => 4 * energy,
-		Colour::Copper => 6 * energy,
-		Colour::Desert => 8 * energy,
-	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[2] {
+	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
-		Colour::Amber => 2 * energy,
-		Colour::Bronze => 2 * energy,
-		Colour::Copper => 4 * energy,
-		Colour::Desert => 6 * energy,
+		Colour::Amber => 3 * energy,
+		Colour::Bronze => 3 * energy,
+		Colour::Copper => 5 * energy,
+		Colour::Desert => 7 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[3] {
+	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
-		Colour::Amber => 4 * energy,
-		Colour::Bronze => 2 * energy,
-		Colour::Copper => 2 * energy,
-		Colour::Desert => 4 * energy,
+		Colour::Amber => 5 * energy,
+		Colour::Bronze => 3 * energy,
+		Colour::Copper => 3 * energy,
+		Colour::Desert => 5 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[4] {
+	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
-		Colour::Amber => 6 * energy,
-		Colour::Bronze => 4 * energy,
-		Colour::Copper => 2 * energy,
-		Colour::Desert => 2 * energy,
+		Colour::Amber => 7 * energy,
+		Colour::Bronze => 5 * energy,
+		Colour::Copper => 3 * energy,
+		Colour::Desert => 3 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[5] {
-	    score += match colour {
-		Colour::Amber => 8 * energy,
-		Colour::Bronze => 6 * energy,
-		Colour::Copper => 4 * energy,
-		Colour::Desert => 2 * energy,
-	    }
-	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[6] {
+	    //score += 1;
 	    score += match colour {
 		Colour::Amber => 9 * energy,
 		Colour::Bronze => 7 * energy,
@@ -129,72 +129,79 @@ impl State {
 		Colour::Desert => 3 * energy,
 	    }
 	}	    
-
+	if let Some(Amphipod{colour, energy}) = self.spots[6] {
+	    score += match colour {
+		Colour::Amber => 10 * energy,
+		Colour::Bronze => 8 * energy,
+		Colour::Copper => 6 * energy,
+		Colour::Desert => 4 * energy,
+	    }
+	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[7] {
 	    score += match colour {
 		Colour::Amber => 1 * energy,
-		Colour::Bronze => 4 * energy,
-		Colour::Copper => 6 * energy,
-		Colour::Desert => 8 * energy,
+		Colour::Bronze => 5 * energy,
+		Colour::Copper => 7 * energy,
+		Colour::Desert => 9 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[8] {
 	    score += match colour {
-		Colour::Amber => 4 * energy,
+		Colour::Amber => 5 * energy,
 		Colour::Bronze => 1 * energy,
-		Colour::Copper => 4 * energy,
-		Colour::Desert => 6 * energy,
+		Colour::Copper => 5 * energy,
+		Colour::Desert => 7 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[9] {
 	    score += match colour {
-		Colour::Amber => 6 * energy,
-		Colour::Bronze => 4 * energy,
+		Colour::Amber => 7 * energy,
+		Colour::Bronze => 5 * energy,
 		Colour::Copper => 1 * energy,
-		Colour::Desert => 4 * energy,
+		Colour::Desert => 5 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[10] {
 	    score += match colour {
-		Colour::Amber => 8 * energy,
-		Colour::Bronze => 6 * energy,
-		Colour::Copper => 4 * energy,
+		Colour::Amber => 9 * energy,
+		Colour::Bronze => 7 * energy,
+		Colour::Copper => 5 * energy,
 		Colour::Desert => 1 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[11] {
 	    score += match colour {
 		Colour::Amber => 0 * energy,
-		Colour::Bronze => 5 * energy,
-		Colour::Copper => 7 * energy,
-		Colour::Desert => 9 * energy,
+		Colour::Bronze => 6 * energy,
+		Colour::Copper => 8 * energy,
+		Colour::Desert => 10 * energy,
 	    }
 	}	    
-	    
 	if let Some(Amphipod{colour, energy}) = self.spots[12] {
 	    score += match colour {
-		Colour::Amber => 5 * energy,
+		Colour::Amber => 6 * energy,
 		Colour::Bronze => 0 * energy,
-		Colour::Copper => 5 * energy,
-		Colour::Desert => 7 * energy,
+		Colour::Copper => 6 * energy,
+		Colour::Desert => 8 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[13] {
 	    score += match colour {
-		Colour::Amber => 7 * energy,
-		Colour::Bronze => 5 * energy,
+		Colour::Amber => 8 * energy,
+		Colour::Bronze => 6 * energy,
 		Colour::Copper => 0 * energy,
-		Colour::Desert => 5* energy,
+		Colour::Desert => 6 * energy,
 	    }
 	}	    
 	if let Some(Amphipod{colour, energy}) = self.spots[14] {
 	    score += match colour {
-		Colour::Amber => 9 * energy,
-		Colour::Bronze => 7 * energy,
-		Colour::Copper => 5 * energy,
+		Colour::Amber => 10 * energy,
+		Colour::Bronze => 8 * energy,
+		Colour::Copper => 6 * energy,
 		Colour::Desert => 0 * energy,
 	    }
-	}	    
+	}
+
 	score
     }
     
@@ -322,8 +329,6 @@ impl State {
 	// this Amphipod is locked in place at this point (see the 4th rule)
 	return None;
     }*/
-
-
 	
 	let colour = self.spots[from_index].unwrap().colour;
 	//println!("trying to move {:?} from {} to {}", colour, from_index, to_index);	
@@ -501,6 +506,7 @@ impl State {
 	}	
 	////////////////// 4 ////////////////////	
 	if !self.spots[4].is_none() {
+	    
 	    for (idx, multiplier) in [(3,2), (5,2), (9,2), (10,2)] {
 		if self.spots[idx].is_none() {
 		    if let Some(new_state) = self.try_new_from_move(4, idx, multiplier) {
@@ -606,7 +612,7 @@ impl State {
 /// we read the file in and populate a State struct, which holds the 15 spots.
 /// Since Amphipods cannot stop outside a room, those empty spaces don't actually need to be stored as a spot
 fn read_file() -> Result<State, io::Error> {
-    let buffered = get_buffered_reader("23-small");
+    let buffered = get_buffered_reader("23");
     let mut lines =  buffered.lines().skip(2).flatten();
 
     let mut starting_state = State::new();
@@ -645,35 +651,41 @@ fn solve(starting_state: State) -> u64  {
     starting_state.pretty_print();
     //let mut search_queue = VecDeque::new();
     let mut search_queue = PriorityQueue::new();
-    
-    search_queue.push(starting_state, (u64::MAX - starting_state.energy_spent -  starting_state.get_heuristic_energy()));
+
+    let starting_heuristic = starting_state.get_heuristic_energy();
+    dbg!(starting_heuristic);
+    search_queue.push(starting_state, -1 *(starting_state.energy_spent + starting_heuristic) as i64 );
     let mut best_energy = 9999999999999999999_u64;
     let mut best_depth = 0;
     let mut state_mapping = HashMap::<State, u64>::new(); // keeps track of the best energy seen for a given setup of Amphipods, so that we can prune redundant states
     let mut count = 0_u64;
     while !search_queue.is_empty() {
 	count += 1;
-	let (current_state, heuristic) = search_queue.pop().unwrap();	
-	if count > 70 {
+	let (current_state, state_score) = search_queue.pop().unwrap();	
+	if count > 50_000 {
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
 	    println!("size of state mapping = {}", state_mapping.len());
 	    println!("current state = {:?}", current_state);
+	    println!("state score = {}", state_score);	    	    
 	    break;
 	}
 
-	if count % 1 == 0 {
+	if count % 10000 == 0 {
+	//if count > 30050 {	    
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
 	    println!("size of state mapping = {}", state_mapping.len());
 	    println!("best energy = {}, best depth = {}", best_energy, best_depth);
 	    println!("current state = {:?}", current_state);
+	    println!("state score = {}", state_score);
+	    println!("heuristic = {}", current_state.get_heuristic_energy());	    	    	    
 	    current_state.pretty_print();
 	}
 	if current_state.is_complete() {
 	    // see if this state is done and with a new best energy
-	    println!("\n\ncount = {}", count);	    
-	    println!("A COMPLETE STATE");
+	    //println!("\n\ncount = {}", count);	    
+	    //println!("A COMPLETE STATE");
 	    //current_state.pretty_print();
 	    if current_state.energy_spent < best_energy {
 		best_energy = current_state.energy_spent;
@@ -681,36 +693,41 @@ fn solve(starting_state: State) -> u64  {
 	    }
 	    continue;
 	}
-	if let Some(best_state_score) =  state_mapping.get(&current_state) {
-	    if *best_state_score < current_state.energy_spent {
-		// we have already seen this state with a better energy spent, so just move on
-		//println!("we have already seen this state with a better energy spent {}, so just move on", best_state_score);
-		continue;
-	    } else {
-		//println!("new best energy {}", current_state.energy_spent);
-		state_mapping.insert(current_state, current_state.energy_spent);
-	    }	    
-	} else {
-	    //println!("completely new state");
-	    state_mapping.insert(current_state, current_state.energy_spent);	    
-	}
 	if current_state.energy_spent > best_energy {
 	    // this state is not worth pursuing
 	    //println!("this state already used too much energy");
 	    continue
 	}
 
-
-	if current_state.depth > 55 {
-	    // TODO
-	    // TODO
-	    // this is just experimenting
-	    continue;
-	}
 	
 	let mut next_states = current_state.get_valid_transitions();
+	    if count == 30051 {
+		println!("next states: {:?}", next_states);		
+	    }
+	
+	//println!("next states:");
 	for state in next_states {
-	    search_queue.push(state, (u64::MAX - state.energy_spent -  state.get_heuristic_energy()));
+	    if count == 30051 {
+		println!("{:?}", state);
+	    }
+	    if let Some(best_state_score) = state_mapping.get(&state) {
+		if *best_state_score < current_state.energy_spent {
+		    // we have already seen this state with a better energy spent, so just move on
+		    //println!("we have already seen this state with a better energy spent {}, so just move on", best_state_score);
+		    continue;
+		} else {
+		    //println!("new best energy {}", current_state.energy_spent);
+		    state_mapping.insert(state, state.energy_spent);
+		}	    
+	    } else {
+		//println!("completely new state");
+		state_mapping.insert(state, state.energy_spent);	    
+	    }
+
+	    
+	    let next_score = -1 * (state.energy_spent + state.get_heuristic_energy()) as i64;
+	    //println!("next score = {}", next_score);
+	    search_queue.push(state, next_score);
 	}
     }
     best_energy
@@ -902,22 +919,43 @@ mod test {
 	state.set(9, "C");	
 	assert_eq!(state.get_heuristic_energy(), 101);
 	state.set(2, "C");	
-	assert_eq!(state.get_heuristic_energy(), 501);
+	assert_eq!(state.get_heuristic_energy(), 601);
 	state.set(8, "C");	
-	assert_eq!(state.get_heuristic_energy(), 901);
+	assert_eq!(state.get_heuristic_energy(), 1101);
 	    
     }
 
+    /*
+    #############
+    #.....D.D...#
+    ###.#B#C#.###
+      #A#B#C#A#
+      #########
+     */
+    #[test]
+    fn test_solve_few_steps() {
+	let mut state = State::new();
+	state.set(11, "A");
+ 	state.set(8, "B");
+ 	state.set(12, "B"); 		
+ 	state.set(9, "C");
+ 	state.set(13, "C");
+ 	state.set(3, "D");
+ 	state.set(4, "D");
+ 	state.set(14, "A");
+	let best = solve(state);
+	assert_eq!(best, 7011);
+	
+    }
     /*
     #############
     #.....D.....#
     ###.#B#C#D###
       #A#B#C#A#
       #########
-
      */
     #[test]
-    fn test_solve_few_steps() {
+    fn test_solve_few_more_steps() {
 	let mut state = State::new();
 	state.set(11, "A");
  	state.set(8, "B");
@@ -933,4 +971,32 @@ mod test {
 	assert_eq!(best, 9011);
 	
     }
+    /*
+    #############
+    #...A.......#
+    ###.#B#C#D###
+      #A#B#C#D#
+      #########
+     */
+    #[test]
+    fn test_solve_easy_real() {
+	// I seem to get to this state on the test input
+	let mut state = State::new();
+	state.energy_spent = 15158;
+	state.prev_end = 2;	
+	state.set(11, "A");
+	state.set(2, "A");	
+ 	state.set(8, "B");
+ 	state.set(12, "B"); 		
+ 	state.set(9, "C");
+ 	state.set(13, "C");
+ 	state.set(10, "D");
+ 	state.set(14, "D");
+	println!("\n\n\n\nblah!");
+	let best = solve(state);
+	println!("blah3!");	
+	assert_eq!(best, 15160);
+	
+    }
+    
 }
