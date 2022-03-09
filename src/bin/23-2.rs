@@ -67,6 +67,7 @@ lazy_static! {
         m
     };
     
+    
 }
 
 const NUM_SPOTS: usize = 23;
@@ -642,84 +643,29 @@ impl State {
     fn get_valid_transitions(&self) -> Vec<Self> {
 	let mut valid_states = Vec::new();
 	
-	////////////////// 0 ////////////////////
-	if ! self.spots[0].is_none() && self.spots[1].is_none() { 
-	    // we can move from 0 to 1 if 0 is full and 1 is empty
-	    if let Some(new_state) = self.try_new_from_move(0, 1, 1) {
-		valid_states.push(new_state)
-	    }
-	}
-	////////////////// 1 ////////////////////	
-	if ! self.spots[1].is_none() {
-	    for (idx, multiplier) in [(0,1), (2,2), (7,2)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(1, idx, multiplier) {
-			valid_states.push(new_state)
-		    }
-		}
-	    }	    
-	}
-	////////////////// 2 ////////////////////	
-	if !self.spots[2].is_none() {
-	    for (idx, multiplier) in [(1,2), (3,2), (7,2), (8,2)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(2, idx, multiplier) {
-			valid_states.push(new_state);
-		    }
-		}
-	    }	    
-	}	
-	////////////////// 3 ////////////////////	
-	if !self.spots[3].is_none() {
-	    for (idx, multiplier) in [(2,2), (4,2), (8,2), (9,2)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(3, idx, multiplier) {
-			valid_states.push(new_state)
-		    }
-		}
-	    }	    
-	}	
-	////////////////// 4 ////////////////////	
-	if !self.spots[4].is_none() {
-	    
-	    for (idx, multiplier) in [(3,2), (5,2), (9,2), (10,2)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(4, idx, multiplier) {
-			valid_states.push(new_state)	    ;
-		    }
-		}
-	    }	    
-	}
-	////////////////// 5 ////////////////////	
-	if !self.spots[5].is_none() {
-	    for (idx, multiplier) in [(6,1), (4, 2), (10, 2)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(5, idx, multiplier) {
-			valid_states.push(new_state)	    ;
-		    }
-		}
-	    }
-	}
-	////////////////// 6 ////////////////////
-	if !self.spots[6].is_none() && self.spots[5].is_none() { 
-	    if let Some(new_state) = self.try_new_from_move(6, 5, 1) {
-		valid_states.push(new_state);
-	    }
-	}
-	////////////////// 7 ////////////////////
-	if !self.spots[7].is_none() && !self.is_amber_done(){
-	    // don't bother moving out of 7 if amber is done
-	    for (idx, multiplier) in [(1,2), (2,2), (11,1)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(7, idx, multiplier) {
-			valid_states.push(new_state);
-		    }
-		}
-	    }
-	}
+	static ref MOVES_MAPPING: HasMap<usize, &[usize]> = {
+            let mut m = HashMap::new();
+	    m.insert(0, [(1,1)]);
+	    m.insert(1, [(0,1), (2,2), (7,2)]);
+	    m.insert(2, [(1,2), (3,2), (7,2), (8,2)]);
+	    m.insert(3, [(2,2), (4,2), (8,2), (9,2)]);
+	    m.insert(4,  [(3,2), (5,2), (9,2), (10,2)]);
+	    m.insert(5, [(6,1), (4, 2), (10, 2)]);
+	    m.insert(6, [(5,1)]);
+	    m.insert(7, [(1,2), (2,2), (11,1)]);
+	    m.insert(8, [(2,2), (3,2), (12,1)]);
+	    m.insert(
+				m.insert(
+				    m.insert(
+					m.insert(
+					    m.insert(
+						m.insert(
+						    m.insert(
+            m
+	};
 	////////////////// 8 ////////////////////
 	if !self.spots[8].is_none() && !self.is_bronze_done(){
-	    for (idx, multiplier) in [(2,2), (3,2), (12,1)] {
+	    for (idx, multiplier) in 
 		if self.spots[idx].is_none() {
 		    if let Some(new_state) = self.try_new_from_move(8, idx, multiplier) {
 			valid_states.push(new_state);
@@ -748,21 +694,33 @@ impl State {
 	    }
 	}
 	////////////////// 11 ////////////////////
-	if !self.spots[11].is_none() && self.spots[7].is_none() { 
-	    if let Some(new_state) = self.try_new_from_move(11, 7, 1) {
-		valid_states.push(new_state);
+	if !self.spots[11].is_none() {
+	    for (idx, multiplier) in [(7,1), (15,1)] {
+		if self.spots[idx].is_none() {
+		    if let Some(new_state) = self.try_new_from_move(11, idx, multiplier) {
+			valid_states.push(new_state)
+		    }
+		}
 	    }
 	}
 	////////////////// 12 ////////////////////
-	if !self.spots[12].is_none() && self.spots[8].is_none() { 
-	    if let Some(new_state) = self.try_new_from_move(12, 8, 1) {
-		valid_states.push(new_state);
+	if !self.spots[12].is_none() {
+	    for (idx, multiplier) in [(8,1), (16,1)] {
+		if self.spots[idx].is_none() {
+		    if let Some(new_state) = self.try_new_from_move(12, idx, multiplier) {
+			valid_states.push(new_state)
+		    }
+		}
 	    }
 	}
 	////////////////// 13 ////////////////////
-	if !self.spots[13].is_none() && self.spots[9].is_none() { 
-	    if let Some(new_state) = self.try_new_from_move(13, 9, 1) {
-		valid_states.push(new_state);
+	if !self.spots[13].is_none() {
+	    for (idx, multiplier) in [(9,1), (17,1)] {
+		if self.spots[idx].is_none() {
+		    if let Some(new_state) = self.try_new_from_move(12, idx, multiplier) {
+			valid_states.push(new_state)
+		    }
+		}
 	    }
 	}
 	////////////////// 14 ////////////////////
