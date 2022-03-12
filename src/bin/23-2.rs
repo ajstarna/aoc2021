@@ -98,6 +98,42 @@ lazy_static! {
         m
     };
 
+    // locked ampipods (will be in the hallway) can only move home. And it depends on colour
+    static ref LOCKED_MOVES_MAPPING: HashMap<(usize, Colour), Vec<(usize, u64)>> = {
+        let mut m = HashMap::new();
+	m.insert((0, Colour::Amber), vec![(7,3)]);
+	m.insert((1, Colour::Amber), vec![(7,2)]);
+	m.insert((2, Colour::Amber), vec![(7,2)]);
+	m.insert((3, Colour::Amber), vec![(7,4)]);
+	m.insert((4, Colour::Amber), vec![(7,6)]);
+	m.insert((5, Colour::Amber), vec![(7,8)]);
+	m.insert((6, Colour::Amber), vec![(7,9)]);		
+	
+	m.insert((0, Colour::Bronze), vec![(8,5)]);
+	m.insert((1, Colour::Bronze), vec![(8,4)]);
+	m.insert((2, Colour::Bronze), vec![(8,2)]);
+	m.insert((3, Colour::Bronze), vec![(8,2)]);
+	m.insert((4, Colour::Bronze), vec![(8,4)]);
+	m.insert((5, Colour::Bronze), vec![(8,6)]);
+	m.insert((6, Colour::Bronze), vec![(8,7)]);		
+	
+	m.insert((0, Colour::Copper), vec![(9,7)]);
+	m.insert((1, Colour::Copper), vec![(9,6)]);
+	m.insert((2, Colour::Copper), vec![(9,4)]);
+	m.insert((3, Colour::Copper), vec![(9,2)]);
+	m.insert((4, Colour::Copper), vec![(9,2)]);
+	m.insert((5, Colour::Copper), vec![(9,4)]);
+	m.insert((6, Colour::Copper), vec![(9,5)]);		
+
+	m.insert((0, Colour::Desert), vec![(10,9)]);
+	m.insert((1, Colour::Desert), vec![(10,8)]);
+	m.insert((2, Colour::Desert), vec![(10,6)]);
+	m.insert((3, Colour::Desert), vec![(10,4)]);
+	m.insert((4, Colour::Desert), vec![(10,2)]);
+	m.insert((5, Colour::Desert), vec![(10,2)]);
+	m.insert((6, Colour::Desert), vec![(10,3)]);		
+	m
+    };
 
 }
 
@@ -628,8 +664,8 @@ impl State {
 		continue;
 	    }
 	    if let Some(Amphipod{colour: _colour, energy: _energy, mut locked}) = self.spots[i] {
-		this doesnt seem to be working
-		    TODO: lock hallway then only let them move into their proper room (with an appropriate multiplier
+		//this doesnt seem to be working
+		//    TODO: lock hallway then only let them move into their proper room (with an appropriate multiplier
 		locked = true;
 	    }
 	}
@@ -692,7 +728,19 @@ impl State {
 	let mut valid_states = Vec::new();	
 	for from_idx in 0..NUM_SPOTS {
 	    //println!("from idx = {}", from_idx);
-	    let to_indices = MOVES_MAPPING.get(&from_idx).unwrap();
+	    let to_indices = {
+		if let Some(Amphipod{colour, energy, locked}) = self.spots[from_idx] {
+		    if locked {
+			// a locked amphipod can only move "home"
+			LOCKED_MOVES_MAPPING.get(&(from_idx, colour)).unwrap()
+		    } else {
+			MOVES_MAPPING.get(&from_idx).unwrap()
+		    }
+		} else {
+		    // no ampipod on this spot, so nothing to move
+		    continue;
+		}
+	    };
 	    for (to_idx, multiplier) in to_indices {
 		//println!("checking {} with {}", to_idx, multiplier);
 		if let Some(new_state) = self.try_new_from_move(from_idx, *to_idx, *multiplier) {
@@ -929,12 +977,23 @@ mod test {
 	let mut state = State::new();
  	state.set(7, "A");
 	state.set(11, "A");	
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
 	state.set(8, "B");
 	state.set(12, "B");	
+	state.set(16, "B");
+	state.set(20, "B");	
+	
 	state.set(9, "C");
 	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
 	state.set(10, "D");
 	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
 	assert!(state.is_complete());
     }
 
@@ -942,14 +1001,27 @@ mod test {
     #[test]
     fn test_solve_easy() {
 	let mut state = State::new();
- 	state.set(1, "A"); // this is the only Amphipod that needs to move, so we should win soon
+
+	state.set(1, "A");
 	state.set(11, "A");	
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
 	state.set(8, "B");
 	state.set(12, "B");	
+	state.set(16, "B");
+	state.set(20, "B");	
+	
 	state.set(9, "C");
 	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
 	state.set(10, "D");
 	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
+	
 	let best = solve(state);
 	assert_eq!(best, 2); // the Amber needs to move from 1 into 7, which is "two" steps X 1 energy each
     }
@@ -957,14 +1029,26 @@ mod test {
     #[test]
     fn test_solve_easy_2() {
 	let mut state = State::new();
- 	state.set(0, "A"); // this is the only Amphipod that needs to move, so we should win soon
+	state.set(0, "A");
 	state.set(11, "A");	
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
 	state.set(8, "B");
 	state.set(12, "B");	
+	state.set(16, "B");
+	state.set(20, "B");	
+	
 	state.set(9, "C");
 	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
 	state.set(10, "D");
 	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
+	
 	let best = solve(state);
 	assert_eq!(best, 3); // the Amber needs to move from 0 to 1 (1 step), then 1 into 7, which is "two" steps
     }
@@ -972,14 +1056,25 @@ mod test {
     #[test]
     fn test_solve_easy_bronze() {
 	let mut state = State::new();
- 	state.set(7, "A"); 
+	state.set(7, "A");
 	state.set(11, "A");	
-	state.set(2, "B"); // this is the only Amphipod that needs to move, so we should win soon
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
+	state.set(2, "B");
 	state.set(12, "B");	
+	state.set(16, "B");
+	state.set(20, "B");	
+	
 	state.set(9, "C");
 	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
 	state.set(10, "D");
 	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
 	let best = solve(state);
 	assert_eq!(best, 20);
     }
@@ -987,14 +1082,25 @@ mod test {
     #[test]
     fn test_solve_easy_copper() {
 	let mut state = State::new();
- 	state.set(7, "A"); 
+	state.set(7, "A");
 	state.set(11, "A");	
-	state.set(8, "B"); 
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
+	state.set(8, "B");
 	state.set(12, "B");	
-	state.set(4, "C"); // this is the only Amphipod that needs to move, so we should win soon
+	state.set(16, "B");
+	state.set(20, "B");	
+	
+	state.set(4, "C");
 	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
 	state.set(10, "D");
 	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
 	let best = solve(state);
 	assert_eq!(best, 200);
     }
@@ -1002,14 +1108,25 @@ mod test {
     #[test]
     fn test_solve_easy_desert() {
 	let mut state = State::new();
- 	state.set(7, "A"); 
+	state.set(7, "A");
 	state.set(11, "A");	
-	state.set(8, "B"); 
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
+	state.set(8, "B");
 	state.set(12, "B");	
-	state.set(9, "C"); 
+	state.set(16, "B");
+	state.set(20, "B");	
+	
+	state.set(9, "C");
 	state.set(13, "C");	
-	state.set(6, "D"); // this is the only Amphipod that needs to move, so we should win soon
+	state.set(17, "C");
+	state.set(21, "C");
+	
+	state.set(6, "D");
 	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
 	let best = solve(state);
 	assert_eq!(best, 3000);
     }
@@ -1039,88 +1156,68 @@ mod test {
 	let mut state = State::new();
  	state.set(7, "A"); 
 	state.set(11, "A");	
-	assert_eq!(state.get_heuristic_energy(), 1);
+	assert_eq!(state.get_heuristic_energy(), 5);
 	state.set(9, "C");	
-	assert_eq!(state.get_heuristic_energy(), 101);
+	assert_eq!(state.get_heuristic_energy(), 305);
 	state.set(2, "C");	
-	assert_eq!(state.get_heuristic_energy(), 601);
+	assert_eq!(state.get_heuristic_energy(), 1005);
 	state.set(8, "C");	
-	assert_eq!(state.get_heuristic_energy(), 1101);
+	assert_eq!(state.get_heuristic_energy(), 1705);
 	    
     }
 
-    /*
-    #############
-    #.....D.D...#
-    ###.#B#C#.###
-      #A#B#C#A#
-      #########
-     */
     #[test]
     fn test_solve_few_steps() {
 	let mut state = State::new();
-	state.set(11, "A");
- 	state.set(8, "B");
- 	state.set(12, "B"); 		
- 	state.set(9, "C");
- 	state.set(13, "C");
- 	state.set(3, "D");
- 	state.set(4, "D");
- 	state.set(14, "A");
+	state.set(6, "A");
+	state.set(11, "A");	
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
+	state.set(8, "B");
+	state.set(12, "B");	
+	state.set(16, "B");
+	state.set(20, "B");	
+	
+	state.set(4, "C");
+	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
+	state.set(5, "D");
+	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
+	
 	let best = solve(state);
-	assert_eq!(best, 7011);
+	assert_eq!(best, 2209);
 	
     }
-    /*
-    #############
-    #.....D.....#
-    ###.#B#C#D###
-      #A#B#C#A#
-      #########
-     */
     #[test]
-    fn test_solve_few_more_steps() {
+    fn test_solve_few_steps_2() {
 	let mut state = State::new();
-	state.set(11, "A");
- 	state.set(8, "B");
- 	state.set(12, "B"); 		
- 	state.set(9, "C");
- 	state.set(13, "C");
- 	state.set(3, "D");
- 	state.set(10, "D");
- 	state.set(14, "A");
-	println!("\n\n\n\nblah!");
+	state.set(10, "A");
+	state.set(11, "A");	
+ 	state.set(15, "A");
+	state.set(19, "A");
+	
+	state.set(8, "B");
+	state.set(12, "B");	
+	state.set(16, "B");
+	state.set(20, "B");	
+	
+	state.set(4, "C");
+	state.set(13, "C");	
+	state.set(17, "C");
+	state.set(21, "C");
+	
+	state.set(0, "D");
+	state.set(14, "D");	
+	state.set(18, "D");
+	state.set(22, "D");	
+	
 	let best = solve(state);
-	println!("blah2!");	
-	assert_eq!(best, 9011);
+	assert_eq!(best, 9208);
 	
     }
-    /*
-    #############
-    #...A.......#
-    ###.#B#C#D###
-      #A#B#C#D#
-      #########
-     */
-    #[test]
-    fn test_solve_easy_real() {
-	// I seem to get to this state on the test input
-	let mut state = State::new();
-	state.energy_spent = 15158;
-	state.prev_end = 2;	
-	state.set(11, "A");
-	state.set(2, "A");	
- 	state.set(8, "B");
- 	state.set(12, "B"); 		
- 	state.set(9, "C");
- 	state.set(13, "C");
- 	state.set(10, "D");
- 	state.set(14, "D");
-	println!("\n\n\n\nblah!");
-	let best = solve(state);
-	println!("blah3!");	
-	assert_eq!(best, 15160);
-	
-    }
-    
 }
