@@ -9,4 +9,4 @@ edition = "2021"
 bitvec = "0.22.3"
 regex = "1.5.4"
 priority-queue = "1.2.1"
-lazy-static = "1.4.0
+lazy_static = "1.4.0"

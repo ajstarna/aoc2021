@@ -1,5 +1,5 @@
 use std::{env, io};
-use std::collections::{HashMap};
+use std::collections::{HashSet, HashMap};
 use priority_queue::PriorityQueue;
 use aoc2021::utils::{get_buffered_reader};
 use std::io::{BufRead};
@@ -12,7 +12,7 @@ extern crate lazy_static;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 enum Colour {
     Amber,
-     Bronze,
+    Bronze,
     Copper,
     Desert,
 }
@@ -30,6 +30,7 @@ fn colour_to_char(colour: Colour) -> char {
 struct Amphipod {
     colour: Colour,
     energy: u64,
+    locked: bool,
 }
 
 
@@ -68,6 +69,36 @@ lazy_static! {
     };
     
     
+    static ref MOVES_MAPPING: HashMap<usize, Vec<(usize, u64)>> = {
+        let mut m = HashMap::new();
+	m.insert(0, vec![(1,1)]);
+	
+	m.insert(1, vec![(0,1), (2,2), (7,2)]);
+	m.insert(2, vec![(1,2), (3,2), (7,2), (8,2)]);
+	m.insert(3, vec![(2,2), (4,2), (8,2), (9,2)]);
+	m.insert(4,  vec![(3,2), (5,2), (9,2), (10,2)]);
+	m.insert(5, vec![(6,1), (4, 2), (10, 2)]);
+	m.insert(6, vec![(5,1)]);
+	m.insert(7, vec![(1,2), (2,2), (11,1)]);
+	m.insert(8, vec![(2,2), (3,2), (12,1)]);
+	m.insert(9,  vec![(3,2), (4,2), (13,1)]);
+	m.insert(10, vec![(4,2), (5,2), (14,1)] );
+	m.insert(11, vec![(7,1), (15,1)] );
+	m.insert(12, vec![(8,1), (16,1)] );
+	m.insert(13, vec![(9,1), (17,1)]);
+	m.insert(14, vec![(10, 1), (18,1)]);
+	m.insert(15, vec![(11, 1), (19,1)]);
+	m.insert(16, vec![(12, 1), (20,1)]);
+	m.insert(17, vec![(13, 1), (21,1)]);
+	m.insert(18, vec![(14, 1), (22,1)]);
+	m.insert(19, vec![(15, 1)]);
+	m.insert(20, vec![(16, 1)]);
+	m.insert(21, vec![(17, 1)]);
+	m.insert(22, vec![(18, 1)]);	
+        m
+    };
+
+
 }
 
 const NUM_SPOTS: usize = 23;
@@ -117,7 +148,7 @@ impl State {
     /// we also add a penalty for each amphipod in the hallway (since a state with more amphiods in their rooms is better)
     fn get_heuristic_energy(&self) -> u64 {
 	let mut score = 0;
-	if let Some(Amphipod{colour, energy}) = self.spots[0] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[0] {
 	    //score += 1; // hallway is worse than room	    
 	    score += match colour {
 		Colour::Amber => 6 * energy,
@@ -126,7 +157,7 @@ impl State {
 		Colour::Desert => 12 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[1] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[1] {
 	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
 			Colour::Amber => 5 * energy,
@@ -135,7 +166,7 @@ impl State {
 			Colour::Desert => 11 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[2] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[2] {
 	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
 			Colour::Amber => 5 * energy,
@@ -144,7 +175,7 @@ impl State {
 			Colour::Desert => 9 * energy,
 		}
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[3] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[3] {
 	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
 			Colour::Amber => 7 * energy,
@@ -153,7 +184,7 @@ impl State {
 			Colour::Desert => 7 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[4] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[4] {
 	    //score += 1; // hallway is worse than room	    	    
 	    score += match colour {
 			Colour::Amber => 9 * energy,
@@ -162,7 +193,7 @@ impl State {
 			Colour::Desert => 5 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[5] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[5] {
 	    //score += 1;
 	    score += match colour {
 			Colour::Amber => 11 * energy,
@@ -171,7 +202,7 @@ impl State {
 			Colour::Desert => 5 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[6] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[6] {
 	    score += match colour {
 		Colour::Amber => 12 * energy,
 		Colour::Bronze => 10 * energy,
@@ -179,7 +210,7 @@ impl State {
 		Colour::Desert => 6 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[7] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[7] {
 	    score += match colour {
 		Colour::Amber => 3 * energy,
 		Colour::Bronze => 7 * energy,
@@ -187,7 +218,7 @@ impl State {
 		Colour::Desert => 11 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[8] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[8] {
 	    score += match colour {
 		Colour::Amber => 7 * energy,
 		Colour::Bronze => 3 * energy,
@@ -195,7 +226,7 @@ impl State {
 		Colour::Desert => 9 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[9] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[9] {
 	    score += match colour {
 		Colour::Amber => 9 * energy,
 		Colour::Bronze => 7 * energy,
@@ -203,7 +234,7 @@ impl State {
 		Colour::Desert => 7 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[10] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[10] {
 	    score += match colour {
 		Colour::Amber => 11 * energy,
 		Colour::Bronze => 9 * energy,
@@ -211,7 +242,7 @@ impl State {
 		Colour::Desert => 3 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[11] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[11] {
 	    score += match colour {
 		Colour::Amber => 2 * energy,
 		Colour::Bronze => 8 * energy,
@@ -219,7 +250,7 @@ impl State {
 		Colour::Desert => 12 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[12] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[12] {
 	    score += match colour {
 		Colour::Amber => 8 * energy,
 		Colour::Bronze => 2 * energy,
@@ -227,7 +258,7 @@ impl State {
 		Colour::Desert => 10 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[13] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[13] {
 	    score += match colour {
 		Colour::Amber => 10 * energy,
 		Colour::Bronze => 8 * energy,
@@ -235,7 +266,7 @@ impl State {
 		Colour::Desert => 8 * energy,
 	    }
 	}	    
-	if let Some(Amphipod{colour, energy}) = self.spots[14] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[14] {
 	    score += match colour {
 		Colour::Amber => 12 * energy,
 		Colour::Bronze => 10 * energy,
@@ -243,7 +274,7 @@ impl State {
 		Colour::Desert => 2 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[15] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[15] {
 	    score += match colour {
 		Colour::Amber => 1 * energy,
 		Colour::Bronze => 9 * energy,
@@ -251,7 +282,7 @@ impl State {
 		Colour::Desert => 13 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[16] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[16] {
 	    score += match colour {
 		Colour::Amber => 11 * energy,
 		Colour::Bronze => 9 * energy,
@@ -259,7 +290,7 @@ impl State {
 		Colour::Desert => 9 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[17] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[17] {
 	    score += match colour {
 		Colour::Amber => 11 * energy,
 		Colour::Bronze => 9 * energy,
@@ -267,7 +298,7 @@ impl State {
 		Colour::Desert => 9 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[18] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[18] {
 	    score += match colour {
 		Colour::Amber => 13 * energy,
 		Colour::Bronze => 11 * energy,
@@ -275,7 +306,7 @@ impl State {
 		Colour::Desert => 1 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[19] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[19] {
 	    score += match colour {
 		Colour::Amber => 0 * energy,
 		Colour::Bronze => 10 * energy,
@@ -283,7 +314,7 @@ impl State {
 		Colour::Desert => 14 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[20] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[20] {
 	    score += match colour {
 		Colour::Amber => 10 * energy,
 		Colour::Bronze => 0 * energy,
@@ -291,7 +322,7 @@ impl State {
 		Colour::Desert => 12 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[21] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[21] {
 	    score += match colour {
 		Colour::Amber => 12 * energy,
 		Colour::Bronze => 10 * energy,
@@ -299,7 +330,7 @@ impl State {
 		Colour::Desert => 10 * energy,
 	    }
 	}
-	if let Some(Amphipod{colour, energy}) = self.spots[22] {
+	if let Some(Amphipod{colour, energy, ..}) = self.spots[22] {
 	    score += match colour {
 		Colour::Amber => 14 * energy,
 		Colour::Bronze => 12 * energy,
@@ -465,10 +496,10 @@ impl State {
     fn set(&mut self, index: usize, letter: &str) -> Result<(), io::Error> {
 	assert!(index < NUM_SPOTS);
 	match letter {
-	    "A" => self.spots[index] = Some(Amphipod{colour: Colour::Amber, energy: 1}),
-	    "B" => self.spots[index] = Some(Amphipod{colour: Colour::Bronze, energy: 10}),
-	    "C" => self.spots[index] = Some(Amphipod{colour: Colour::Copper, energy: 100}),
-	    "D" => self.spots[index] = Some(Amphipod{colour: Colour::Desert, energy: 1000}),
+	    "A" => self.spots[index] = Some(Amphipod{colour: Colour::Amber, energy: 1, locked: false}),
+	    "B" => self.spots[index] = Some(Amphipod{colour: Colour::Bronze, energy: 10, locked: false}),
+	    "C" => self.spots[index] = Some(Amphipod{colour: Colour::Copper, energy: 100, locked: false}),
+	    "D" => self.spots[index] = Some(Amphipod{colour: Colour::Desert, energy: 1000, locked: false}),
 	    _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("unable to parse {:?} as an Amphipod for index {}", letter, index))),
 	}
 	Ok(())
@@ -482,24 +513,28 @@ impl State {
     // return a copied state from self, when we move whatever is in from_index to to_index
     // multiplier is usually 1, but we might set it to 2 to represent that we are moving to the "imaginary" spot right outside a room and then into a room
     fn try_new_from_move(&self, from_index: usize, to_index: usize, multiplier: u64) -> Option<Self> {
+	if self.spots[from_index].is_none() || !self.spots[to_index].is_none(){
+	    // have to move from a full spot to an empty spot
+	    return None;
+	}
 	let colour = self.spots[from_index].unwrap().colour;
 	//println!("trying to move {:?} from {} to {}", colour, from_index, to_index);	
 	match colour {
 	    Colour::Amber => {
-		if self.is_amber_done() || (AMBER_INDICES.contains(from_index) && to_index < from_index){
+		if self.is_amber_done() || (AMBER_INDICES.contains(&from_index) && to_index < from_index){
 		    // if we are fully done or if we are currently attempting to move up the amber room
 		    return None;
 		}
-		if (BRONZE_INDICES.contains(to_index)
-		    || COPPER_INDICES.contains(to_index)
-		    || DESERT_INDICES.contains(to_index))
+		if (BRONZE_INDICES.contains(&to_index)
+		    || COPPER_INDICES.contains(&to_index)
+		    || DESERT_INDICES.contains(&to_index))
 		    && to_index > from_index {
 			// don't go deeper into the wrong room
 			return None;
 		    }
 		if to_index == 7  {
 		    // we do not want to move into the Amber room if it means blocking the wrong colour in the room
-		    for room_idx in AMBER_INDICES {
+		    for &room_idx in AMBER_INDICES.iter() {
 			if let Some(Amphipod{colour: colour2, ..}) = self.spots[room_idx] {
 			    match colour2 {
 				Colour::Amber => (),
@@ -510,12 +545,12 @@ impl State {
 		}
 	    },
 	    Colour::Bronze => {
-		if self.is_bronze_done() || (BRONZE_INDICES.contains(from_index) && to_index < from_index){
+		if self.is_bronze_done() || (BRONZE_INDICES.contains(&from_index) && to_index < from_index){
 		    return None;
 		}
-		if (AMBER_INDICES.contains(to_index)
-		    || COPPER_INDICES.contains(to_index)
-		    || DESERT_INDICES.contains(to_index))
+		if (AMBER_INDICES.contains(&to_index)
+		    || COPPER_INDICES.contains(&to_index)
+		    || DESERT_INDICES.contains(&to_index))
 		    && to_index > from_index {
 			// don't go deeper into the wrong room
 			return None;
@@ -523,7 +558,7 @@ impl State {
 		
 		if to_index == 8  {
 		    // we do not want to move into the Amber room if it means blocking the wrong colour in the room
-		    for room_idx in BRONZE_INDICES {		    
+		    for &room_idx in BRONZE_INDICES.iter() {		    
 			if let Some(Amphipod{colour: colour2, ..}) = self.spots[room_idx] {
 			    match colour2 {
 				Colour::Bronze => (),
@@ -534,12 +569,12 @@ impl State {
 		}		
 	    },
 	    Colour::Copper => {
-		if self.is_copper_done() ||  (COPPER_INDICES.contains(from_index) && to_index < from_index){
+		if self.is_copper_done() ||  (COPPER_INDICES.contains(&from_index) && to_index < from_index){
 		    return None;
 		}
-		if (BRONZE_INDICES.contains(to_index)
-		    || AMBER_INDICES.contains(to_index)
-		    || DESERT_INDICES.contains(to_index))
+		if (BRONZE_INDICES.contains(&to_index)
+		    || AMBER_INDICES.contains(&to_index)
+		    || DESERT_INDICES.contains(&to_index))
 		    && to_index > from_index {
 			// don't go deeper into the wrong room
 			return None;
@@ -547,8 +582,8 @@ impl State {
 		
 		if to_index == 9  {
 		    // we do not want to move into the Copper room if it means blocking the wrong colour in the room
-		    for room_idx in COPPER_INDICES {		    		    
-			if let Some(Amphipod{colour: colour2, ..}) = self.spots[13] {
+		    for &room_idx in COPPER_INDICES.iter() {		    		    
+			if let Some(Amphipod{colour: colour2, ..}) = self.spots[room_idx] {
 			    match colour2 {
 				Colour::Copper => (),
 				_ => return None,
@@ -558,12 +593,12 @@ impl State {
 		}
 	    },
 	    Colour::Desert => {
-		if self.is_desert_done() || (DESERT_INDICES.contains(from_index) && to_index < from_index){
+		if self.is_desert_done() || (DESERT_INDICES.contains(&from_index) && to_index < from_index){
 		    return None;
 		}
-		if (BRONZE_INDICES.contains(to_index)
-		    || AMBER_INDICES.contains(to_index)
-		    || COPPER_INDICES.contains(to_index))
+		if (BRONZE_INDICES.contains(&to_index)
+		    || AMBER_INDICES.contains(&to_index)
+		    || COPPER_INDICES.contains(&to_index))
 		    && to_index > from_index {
 			// don't go deeper into the wrong room
 			return None;
@@ -571,8 +606,8 @@ impl State {
 		
 		if to_index == 10  {
 		    // we do not want to move into the Desert room if it means blocking the wrong colour in the room
-		    for room_idx in DESERT_INDICES {		    		    
-			if let Some(Amphipod{colour: colour2, ..}) = self.spots[14] {
+		    for &room_idx in DESERT_INDICES.iter() {		    		    
+			if let Some(Amphipod{colour: colour2, ..}) = self.spots[room_idx] {
 			    match colour2 {
 				Colour::Desert => (),
 				_ => return None,
@@ -584,8 +619,21 @@ impl State {
 	    },
 	}
 	let mut new_state = *self; // copy ourself
-	new_state.spots[to_index] = new_state.spots[from_index];
+	new_state.spots[to_index] = new_state.spots[from_index];	   
 	new_state.spots[from_index] = None;
+
+	// lock all amphipods currently in the hallway
+	for i in 0..7 {
+	    if i == to_index {
+		continue;
+	    }
+	    if let Some(Amphipod{colour: _colour, energy: _energy, mut locked}) = self.spots[i] {
+		this doesnt seem to be working
+		    TODO: lock hallway then only let them move into their proper room (with an appropriate multiplier
+		locked = true;
+	    }
+	}
+	
 	new_state.energy_spent += new_state.spots[to_index].unwrap().energy * multiplier;
 	new_state.depth += multiplier;
 	new_state.prev_end = to_index;
@@ -596,44 +644,44 @@ impl State {
 
     
     fn is_amber_done(&self) -> bool {
-	for idx in AMBER_INDICES {
+	for &idx in AMBER_INDICES.iter() {
 	    if let Some(Amphipod{colour: Colour::Amber, ..}) = self.spots[idx] {
 		
 	    } else {
-		return False
+		return false
 	    }
 	}
 	true
     }
     
     fn is_bronze_done(&self) -> bool {
-	for idx in BRONZE_INDICES {
+	for &idx in BRONZE_INDICES.iter() {
 	    if let Some(Amphipod{colour: Colour::Bronze, ..}) = self.spots[idx] {
 		
 	    } else {
-		return False
+		return false
 	    }
 	}
 	true
     }
     
     fn is_copper_done(&self) -> bool {
-	for idx in COPPER_INDICES {
+	for &idx in COPPER_INDICES.iter() {
 	    if let Some(Amphipod{colour: Colour::Copper, ..}) = self.spots[idx] {
 		
 	    } else {
-		return False
+		return false
 	    }
 	}
 	true
     }
     
     fn is_desert_done(&self) -> bool {
-	for idx in DESERT_INDICES {
+	for &idx in DESERT_INDICES.iter() {
 	    if let Some(Amphipod{colour: Colour::Desert, ..}) = self.spots[idx] {
 		
 	    } else {
-		return False
+		return false
 	    }
 	}
 	true
@@ -641,95 +689,18 @@ impl State {
     
     /// the current state returns a vector of all other valid States based on moving on Amphipod
     fn get_valid_transitions(&self) -> Vec<Self> {
-	let mut valid_states = Vec::new();
-	
-	static ref MOVES_MAPPING: HasMap<usize, &[usize]> = {
-            let mut m = HashMap::new();
-	    m.insert(0, [(1,1)]);
-	    m.insert(1, [(0,1), (2,2), (7,2)]);
-	    m.insert(2, [(1,2), (3,2), (7,2), (8,2)]);
-	    m.insert(3, [(2,2), (4,2), (8,2), (9,2)]);
-	    m.insert(4,  [(3,2), (5,2), (9,2), (10,2)]);
-	    m.insert(5, [(6,1), (4, 2), (10, 2)]);
-	    m.insert(6, [(5,1)]);
-	    m.insert(7, [(1,2), (2,2), (11,1)]);
-	    m.insert(8, [(2,2), (3,2), (12,1)]);
-	    m.insert(
-				m.insert(
-				    m.insert(
-					m.insert(
-					    m.insert(
-						m.insert(
-						    m.insert(
-            m
-	};
-	////////////////// 8 ////////////////////
-	if !self.spots[8].is_none() && !self.is_bronze_done(){
-	    for (idx, multiplier) in 
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(8, idx, multiplier) {
-			valid_states.push(new_state);
-		    }
+	let mut valid_states = Vec::new();	
+	for from_idx in 0..NUM_SPOTS {
+	    //println!("from idx = {}", from_idx);
+	    let to_indices = MOVES_MAPPING.get(&from_idx).unwrap();
+	    for (to_idx, multiplier) in to_indices {
+		//println!("checking {} with {}", to_idx, multiplier);
+		if let Some(new_state) = self.try_new_from_move(from_idx, *to_idx, *multiplier) {
+		    //println!("found valid");
+		    valid_states.push(new_state);
 		}
 	    }
 	}
-	////////////////// 9 ////////////////////
-	if ! self.spots[9].is_none() && !self.is_copper_done(){
-	    for (idx, multiplier) in [(3,2), (4,2), (13,1)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(9, idx, multiplier) {
-			valid_states.push(new_state)
-		    }
-		}
-	    }
-	}
-	////////////////// 10 ////////////////////
-	if !self.spots[10].is_none() && !self.is_desert_done(){
-	    for (idx, multiplier) in [(4,2), (5,2), (14,1)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(10, idx, multiplier) {
-			valid_states.push(new_state);
-		    }
-		}
-	    }
-	}
-	////////////////// 11 ////////////////////
-	if !self.spots[11].is_none() {
-	    for (idx, multiplier) in [(7,1), (15,1)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(11, idx, multiplier) {
-			valid_states.push(new_state)
-		    }
-		}
-	    }
-	}
-	////////////////// 12 ////////////////////
-	if !self.spots[12].is_none() {
-	    for (idx, multiplier) in [(8,1), (16,1)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(12, idx, multiplier) {
-			valid_states.push(new_state)
-		    }
-		}
-	    }
-	}
-	////////////////// 13 ////////////////////
-	if !self.spots[13].is_none() {
-	    for (idx, multiplier) in [(9,1), (17,1)] {
-		if self.spots[idx].is_none() {
-		    if let Some(new_state) = self.try_new_from_move(12, idx, multiplier) {
-			valid_states.push(new_state)
-		    }
-		}
-	    }
-	}
-	////////////////// 14 ////////////////////
-	if !self.spots[14].is_none() && self.spots[10].is_none() { 
-	    if let Some(new_state) = self.try_new_from_move(14, 10, 1) {
-		valid_states.push(new_state);
-	    }
-	}
-
 	valid_states
     }
 
@@ -776,6 +747,32 @@ fn read_file() -> Result<State, io::Error> {
     } else {
 	return Err(io::Error::new(io::ErrorKind::InvalidInput, "unable to parse input file on the second Amphipod line"));
     }
+    let line3 = lines.next().unwrap();
+    let re3 = Regex::new(r"  #(\w)#(\w)#(\w)#(\w)#").unwrap();    
+    println!("line 3 = {:?}",  line3);
+    if let Some(caps) = re3.captures(&line3) {
+	println!("matched line 1");	
+	starting_state.set(15, &caps[1])?;
+	starting_state.set(16, &caps[2])?;
+	starting_state.set(17, &caps[3])?;
+	starting_state.set(18, &caps[4])?;	
+	
+    } else {
+	return Err(io::Error::new(io::ErrorKind::InvalidInput, "unable to parse input file on the third Amphipod line"));
+    }
+    let line4 = lines.next().unwrap();
+    let re4 = Regex::new(r"  #(\w)#(\w)#(\w)#(\w)#").unwrap();    
+    println!("line 4 = {:?}",  line4);
+    if let Some(caps) = re4.captures(&line4) {
+	println!("matched line 1");	
+	starting_state.set(19, &caps[1])?;
+	starting_state.set(20, &caps[2])?;
+	starting_state.set(21, &caps[3])?;
+	starting_state.set(22, &caps[4])?;	
+	
+    } else {
+	return Err(io::Error::new(io::ErrorKind::InvalidInput, "unable to parse input file on the 4th Amphipod line"));
+    }
     Ok(starting_state)
 }
 
@@ -795,7 +792,7 @@ fn solve(starting_state: State) -> u64  {
     while !search_queue.is_empty() {
 	count += 1;
 	let (current_state, state_score) = search_queue.pop().unwrap();	
-	if count > 50_000 {
+	if count > 50_000_000 {
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
 	    println!("size of state mapping = {}", state_mapping.len());
@@ -804,7 +801,7 @@ fn solve(starting_state: State) -> u64  {
 	    break;
 	}
 
-	if count % 10000 == 0 {
+	if count % 10_000 == 0 {
 	//if count > 30050 {	    
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
@@ -833,16 +830,10 @@ fn solve(starting_state: State) -> u64  {
 	}
 
 	
-	let mut next_states = current_state.get_valid_transitions();
-	    if count == 30051 {
-		println!("next states: {:?}", next_states);		
-	    }
+	let next_states = current_state.get_valid_transitions();
 	
 	//println!("next states:");
 	for state in next_states {
-	    if count == 30051 {
-		println!("{:?}", state);
-	    }
 	    if let Some(best_state_score) = state_mapping.get(&state) {
 		if *best_state_score < current_state.energy_spent {
 		    // we have already seen this state with a better energy spent, so just move on
@@ -886,7 +877,7 @@ fn main() {
     let part = &args[1];
     println!("part = {}", part);
     match part.as_str() {
-	"1" => run(),
+	"1" => panic!("cannot do 1 on this file!"),
 	"2" => run(),
 	_ => panic!("invalid part number argument!"),
     }
