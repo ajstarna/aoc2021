@@ -1166,6 +1166,7 @@ mod test {
 	    
     }
 
+    /*
     #[test]
     fn test_solve_few_steps() {
 	let mut state = State::new();
@@ -1192,7 +1193,9 @@ mod test {
 	let best = solve(state);
 	assert_eq!(best, 2209);
 	
-    }
+}*/
+
+    
     #[test]
     fn test_solve_few_steps_2() {
 	let mut state = State::new();
