@@ -30,44 +30,78 @@ fn colour_to_char(colour: Colour) -> char {
 struct Amphipod {
     colour: Colour,
     energy: u64,
-    locked: bool,
 }
 
+const AMBER_INDICES: [usize;4] = [11,15,19,23];
+const BRONZE_INDICES: [usize;4] = [12,16,20,24];
+const COPPER_INDICES: [usize;4] = [13,17,21,25];
+const DESERT_INDICES: [usize;4] = [14,18,22,26];
 
 lazy_static! {
+
+    static ref DOOR_INDICES: HashSet<usize> = {
+	// spots right outside a door; not valid to stop here
+        let mut m = HashSet::new();
+        m.insert(2);
+        m.insert(4);
+        m.insert(6);
+        m.insert(8);
+	m
+    };
+
+    static ref DOOR_MAPPING: HashMap<Colour, usize> = {
+	// maps from a given colour to the index of the spot outside its door
+        let mut m = HashMap::new();
+        m.insert(Colour::Amber, 2);
+        m.insert(Colour::Bronze, 4);
+        m.insert(Colour::Copper, 6);
+        m.insert(Colour::Desert, 8);	
+        m
+    };
+
+    /*
     static ref AMBER_INDICES: HashSet<usize> = {
         let mut m = HashSet::new();
-        m.insert(7);
         m.insert(11);
         m.insert(15);
-        m.insert(19);	
+        m.insert(19);
+        m.insert(23);	
         m
     };
     static ref BRONZE_INDICES: HashSet<usize> = {
         let mut m = HashSet::new();
-        m.insert(8);
         m.insert(12);
         m.insert(16);
-        m.insert(20);	
+        m.insert(20);
+        m.insert(24);	
         m
     };
     static ref COPPER_INDICES: HashSet<usize> = {
         let mut m = HashSet::new();
-        m.insert(9);
         m.insert(13);
         m.insert(17);
-        m.insert(21);	
+        m.insert(21);
+        m.insert(25);	
         m
     };
     static ref DESERT_INDICES: HashSet<usize> = {
         let mut m = HashSet::new();
-        m.insert(10);
         m.insert(14);
         m.insert(18);
-        m.insert(22);	
+        m.insert(22);
+        m.insert(26);	
         m
     };
-    
+    */
+    static ref COLOUR_TO_ROOM_INDICES: HashMap<Colour, [usize;4]> = {
+        let mut m = HashMap::new();
+        m.insert(Colour::Amber, AMBER_INDICES);
+        m.insert(Colour::Bronze, BRONZE_INDICES);
+        m.insert(Colour::Copper, COPPER_INDICES);
+        m.insert(Colour::Desert, DESERT_INDICES);	
+        m
+	
+    };
     
     static ref MOVES_MAPPING: HashMap<usize, Vec<(usize, u64)>> = {
         let mut m = HashMap::new();
@@ -175,7 +209,7 @@ lazy_static! {
     
 }
 
-const NUM_SPOTS: usize = 23;
+const NUM_SPOTS: usize = 27;
 
 /// the state keeps tracks of what is in each of the 15 rooms
 #[derive(Debug, Copy, Clone, Eq)]
@@ -183,7 +217,6 @@ struct State {
     spots: [Option<Amphipod>; NUM_SPOTS],
     energy_spent: u64, // total amount of energy spent by all moves
     depth: u64,
-    prev_end: usize, // the index of where the last move ended (useful for the rule that an Amphipod "locks" in the hallway until it can move back into a room
 }
 
 /// to hash a state, we only care about the spots, not the energy spent.
@@ -201,25 +234,13 @@ impl PartialEq for State {
 }
 
 /*
-The indices of self.spots look sorta like this ha. Across the rows of the input file
-The spots right outside the rooms don't need to be stored, since Amphipods are not allowed to stop there
-#############
-#01.2.3.4.56#
-### 7# 8# 9#10###
-  #11#12#13#14#
-  #15#16#17#18#
-  #19#20#21#22#
-  #########
+we store the hallway as indices 0..=10, then the hall is 11..=26
 */
 impl State {
     fn new() -> Self {
-		Self {spots: [None; NUM_SPOTS], energy_spent: 0, depth: 0, prev_end: 0}
+	Self {spots: [None; NUM_SPOTS], energy_spent: 0, depth: 0}
     }
 
-    // based on where all the 
-    fn compute_id(&mut self) {
-    }
-    
     /// a heuristic of how well the postion is doing.
     /// the higher the score the "worse" the state
     /// we take the distance for each amphipod to get to the bottom of its room
@@ -640,10 +661,10 @@ impl State {
     fn set(&mut self, index: usize, letter: &str) -> Result<(), io::Error> {
 	assert!(index < NUM_SPOTS);
 	match letter {
-	    "A" => self.spots[index] = Some(Amphipod{colour: Colour::Amber, energy: 1, locked: false}),
-	    "B" => self.spots[index] = Some(Amphipod{colour: Colour::Bronze, energy: 10, locked: false}),
-	    "C" => self.spots[index] = Some(Amphipod{colour: Colour::Copper, energy: 100, locked: false}),
-	    "D" => self.spots[index] = Some(Amphipod{colour: Colour::Desert, energy: 1000, locked: false}),
+	    "A" => self.spots[index] = Some(Amphipod{colour: Colour::Amber, energy: 1}),
+	    "B" => self.spots[index] = Some(Amphipod{colour: Colour::Bronze, energy: 10}),
+	    "C" => self.spots[index] = Some(Amphipod{colour: Colour::Copper, energy: 100}),
+	    "D" => self.spots[index] = Some(Amphipod{colour: Colour::Desert, energy: 1000}),
 	    _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, format!("unable to parse {:?} as an Amphipod for index {}", letter, index))),
 	}
 	Ok(())
@@ -766,27 +787,10 @@ impl State {
 	new_state.spots[to_index] = new_state.spots[from_index];	   
 	new_state.spots[from_index] = None;
 
-	//new_state.spots[to_index].unwrap().locked = false; // this line isn't working?
-	// lock all amphipods currently in the hallway
-	for i in 0..7 {
-	    if i == to_index {
-		continue;
-	    }
-	    if let Some(Amphipod{colour: _, energy: _, ref mut locked}) = new_state.spots[i] {
-		//this doesnt seem to be working
-		//    TODO: lock hallway then only let them move into their proper room (with an appropriate multiplier
-		*locked = true;
-	    }
-	}
-	
 	new_state.energy_spent += new_state.spots[to_index].unwrap().energy * multiplier;
 	new_state.depth += multiplier;
-	new_state.prev_end = to_index;
 	Some(new_state)
     }
-
-
-
     
     fn is_amber_done(&self) -> bool {
 	for &idx in AMBER_INDICES.iter() {
@@ -831,38 +835,138 @@ impl State {
 	}
 	true
     }
-    
+
+
+    /// check if there is an amphipod of the wrong colour in the room for the given colour
+    fn is_room_dirty(&self, colour: Colour) -> bool {
+	let room_indices = COLOUR_TO_ROOM_INDICES.get(&colour).unwrap();
+	for &room_idx in room_indices.iter() {
+	    if let Some(Amphipod{colour: colour2, ..}) = self.spots[room_idx] {
+		if colour2 != colour {
+		    return true; //found the wrong colour
+		}
+	    }
+	}
+	false
+    }
+
+
+    /// given a from_index of an ampipod to all the possible locations in the hallway
+    /// returns a (possibly empty) vec of new states
+    /// we assume we can clearly move out of the room
+    fn move_into_hallway(&self, from_index: usize) -> Vec<Self> {
+	let mut hall_states = Vec::new();		
+	let colour = self.spots[from_index].unwrap().colour;
+	//println!("trying to move {:?} from {}", colour, from_index, to_index);
+
+	let room_indices = COLOUR_TO_ROOM_INDICES.get(&colour).unwrap();	
+	let mut steps: u64 = 0;
+	for &room_idx in room_indices.iter() {
+	    steps += 1;
+	    if room_idx == from_index {
+		break;
+	    }
+	}
+	
+	let door_idx = DOOR_MAPPING.get(&colour).unwrap();
+	for hall_idx in (*door_idx..11).skip(1) {
+	    // to the right in the hall
+	    steps += 1;
+	    if self.spots[hall_idx].is_none() {
+		let mut new_state = *self; // copy ourself
+		new_state.spots[hall_idx] = new_state.spots[from_index];	   
+		new_state.spots[from_index] = None;
+		new_state.energy_spent += new_state.spots[hall_idx].unwrap().energy * steps;
+		new_state.depth += 1;
+		hall_states.push(new_state);
+	    }
+	}
+	for hall_idx in (*door_idx..=0).skip(1) {
+	    // to the left in the hall	    
+	    steps += 1;
+	    if self.spots[hall_idx].is_none() {
+		let mut new_state = *self; // copy ourself
+		new_state.spots[hall_idx] = new_state.spots[from_index];	   
+		new_state.spots[from_index] = None;
+		new_state.energy_spent += new_state.spots[hall_idx].unwrap().energy * steps;
+		new_state.depth += 1;
+		hall_states.push(new_state);
+	    }
+	}
+	hall_states
+    }
+
+
+	
+    /// given a from index, we move the ampipod from the from index as deep into the room as we can
+    /// we assume validation of a clear path to the room already occured
+    fn move_into_room(&self, from_index: usize) -> Self {
+	let colour = self.spots[from_index].unwrap().colour;
+	//println!("trying to move {:?} from {}", colour, from_index, to_index);
+	let door_idx = DOOR_MAPPING.get(&colour).unwrap();	
+	let mut steps = std::cmp::max(from_index, *door_idx) - std::cmp::min(from_index, *door_idx) + 1; // add one cuz we are going at least one step into the room
+	
+	let room_indices = COLOUR_TO_ROOM_INDICES.get(&colour).unwrap();
+	let mut to_index = room_indices[0]; // at least the first spot needs to be free to move into a room
+	assert!(self.spots[to_index].is_none());
+	for &room_idx in room_indices.iter().skip(1) {
+	    if self.spots[room_idx].is_none() {
+		to_index = room_idx;
+		steps += 1;
+	    } else {
+		break;
+	    }
+	}
+	let mut new_state = *self; // copy ourself
+	new_state.spots[to_index] = new_state.spots[from_index];	   
+	new_state.spots[from_index] = None;
+	new_state.energy_spent += new_state.spots[to_index].unwrap().energy * steps as u64;
+	new_state.depth += 1;
+	new_state
+    }
+
     /// the current state returns a vector of all other valid States based on moving on Amphipod
     fn get_valid_transitions(&self) -> Vec<Self> {
 	let mut valid_states = Vec::new();	
-	for from_idx in 0..NUM_SPOTS {
-	    //println!("from idx = {}", from_idx);
-	    let to_indices = {
-		if let Some(Amphipod{colour, energy: _, locked}) = self.spots[from_idx] {
-		    if State::is_hallway_index(from_idx) && locked {
-			// a locked amphipod can only move "home"
-			// we need to make sure the path is clear
-			let path_indices = LOCKED_PATH.get(&(from_idx, colour)).unwrap();
-			let path_blocked = path_indices.iter().any(|&path_idx| !self.spots[path_idx].is_none());
-			if path_blocked {
-			    // we can't do any moves since we are locked, but also the path isn't clear
-			    continue;
-			}
-			LOCKED_MOVES_MAPPING.get(&(from_idx, colour)).unwrap()
-		    } else {
-			MOVES_MAPPING.get(&from_idx).unwrap()
+	for from_index in 0..NUM_SPOTS {
+	    if let Some(Amphipod{colour, energy: _ }) = self.spots[from_index] {
+		if State::is_hallway_index(from_index) {
+		    // in hallway, can only move home if possible
+		    // check for blockers
+		    let door_idx = DOOR_MAPPING.get(&colour).unwrap();				    
+		    let clear_to_door = (from_index..*door_idx).skip(1).all(|hall_idx| self.spots[hall_idx].is_none());
+		    if !clear_to_door {
+			// cannot move to the door, so no where to go really
+			continue;
 		    }
-		} else {
-		    // no ampipod on this spot, so nothing to move
-		    continue;
-		}
-	    };
-	    //println!("to indices = {:?}", to_indices);	    
-	    for (to_idx, multiplier) in to_indices {
-		//println!("checking {} with {}", to_idx, multiplier);
-		if let Some(new_state) = self.try_new_from_move(from_idx, *to_idx, *multiplier) {
-		    //println!("found valid");
+		    if self.is_room_dirty(colour) {
+			// can't move into a room with the wrong colour in it
+			continue;
+		    }
+		    let new_state = self.move_into_room(from_index);
 		    valid_states.push(new_state);
+
+		} else {
+		    // can move anywhere into the hallway that is not blocked and not right outside a room
+		    // check for blockers
+		    let room_indices = COLOUR_TO_ROOM_INDICES.get(&colour).unwrap();
+		    let mut clear_to_door = true;
+		    for &room_idx in room_indices.iter() {
+			if room_idx == from_index {
+			    break;
+			} else if !self.spots[room_idx].is_none() {
+			    clear_to_door = false;
+			    break;
+			}
+			
+		    }
+		    if !clear_to_door {
+			// cannot move to the door, so no where to go really
+			continue;
+		    }
+		    
+		    let new_states = self.move_into_hallway(from_index);
+		    valid_states.extend(new_states);
 		}
 	    }
 	}
