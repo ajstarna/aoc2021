@@ -34,6 +34,11 @@ struct Amphipod {
 }
 
 
+const AMBER_INDICES_ARRAY: [usize;4] = [7,11,15,19];
+const BRONZE_INDICES_ARRAY: [usize;4] = [8,12,16,20];
+const COPPER_INDICES_ARRAY: [usize;4] = [9,13,17,21];
+const DESERT_INDICES_ARRAY: [usize;4] = [10,14,18,22];
+
 lazy_static! {
     static ref AMBER_INDICES: HashSet<usize> = {
         let mut m = HashSet::new();
@@ -69,6 +74,16 @@ lazy_static! {
     };
     
     
+    static ref COLOUR_TO_ROOM_INDICES: HashMap<Colour, [usize; 4]> = {
+        let mut m = HashMap::new();
+        m.insert(Colour::Amber, AMBER_INDICES_ARRAY);
+        m.insert(Colour::Bronze, BRONZE_INDICES_ARRAY);
+        m.insert(Colour::Copper, COPPER_INDICES_ARRAY);
+        m.insert(Colour::Desert, DESERT_INDICES_ARRAY);	
+        m
+	
+    };
+
     static ref MOVES_MAPPING: HashMap<usize, Vec<(usize, u64)>> = {
         let mut m = HashMap::new();
 	m.insert(0, vec![(1,1)]);
@@ -665,7 +680,7 @@ impl State {
 	//println!("trying to move {:?} from {} to {}", colour, from_index, to_index);	
 	match colour {
 	    Colour::Amber => {
-		if self.is_amber_done() || (AMBER_INDICES.contains(&from_index) && to_index < from_index){
+		if self.is_amber_done() || (AMBER_INDICES.contains(&from_index) && to_index < from_index && !self.is_room_dirty(colour)){
 		    // if we are fully done or if we are currently attempting to move up the amber room
 		    return None;
 		}
@@ -689,7 +704,7 @@ impl State {
 		}
 	    },
 	    Colour::Bronze => {
-		if self.is_bronze_done() || (BRONZE_INDICES.contains(&from_index) && to_index < from_index){
+		if self.is_bronze_done() || (BRONZE_INDICES.contains(&from_index) && to_index < from_index && !self.is_room_dirty(colour)){
 		    return None;
 		}
 		if (AMBER_INDICES.contains(&to_index)
@@ -713,7 +728,7 @@ impl State {
 		}		
 	    },
 	    Colour::Copper => {
-		if self.is_copper_done() ||  (COPPER_INDICES.contains(&from_index) && to_index < from_index){
+		if self.is_copper_done() ||  (COPPER_INDICES.contains(&from_index) && to_index < from_index && !self.is_room_dirty(colour)){
 		    return None;
 		}
 		if (BRONZE_INDICES.contains(&to_index)
@@ -737,7 +752,8 @@ impl State {
 		}
 	    },
 	    Colour::Desert => {
-		if self.is_desert_done() || (DESERT_INDICES.contains(&from_index) && to_index < from_index){
+		if self.is_desert_done() || (DESERT_INDICES.contains(&from_index) && to_index < from_index && !self.is_room_dirty(colour)){
+		    // if the room is done, or if we are in our proer room, and there are no bad colours in our room, then dont go out of the room
 		    return None;
 		}
 		if (BRONZE_INDICES.contains(&to_index)
@@ -786,6 +802,19 @@ impl State {
     }
 
 
+
+    /// check if there is an amphipod of the wrong colour in the room for the given colour
+    fn is_room_dirty(&self, colour: Colour) -> bool {
+	let room_indices = COLOUR_TO_ROOM_INDICES.get(&colour).unwrap();
+	for &room_idx in room_indices.iter() {
+	    if let Some(Amphipod{colour: colour2, ..}) = self.spots[room_idx] {
+		if colour2 != colour {
+		    return true; //found the wrong colour
+		}
+	    }
+	}
+	false
+    }
 
     
     fn is_amber_done(&self) -> bool {
@@ -957,7 +986,7 @@ fn solve(starting_state: State) -> u64  {
     while !search_queue.is_empty() {
 	count += 1;
 	let (current_state, state_score) = search_queue.pop().unwrap();	
-	if count > 500 {
+	if count > 100_000_000 {
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
 	    println!("size of state mapping = {}", state_mapping.len());
@@ -966,7 +995,7 @@ fn solve(starting_state: State) -> u64  {
 	    break;
 	}
 
-	if count % 1 == 0 {
+	if count % 100_000 == 0 {
 	//if count > 30050 {	    
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
@@ -994,11 +1023,6 @@ fn solve(starting_state: State) -> u64  {
 	    continue
 	}
 
-
-	if current_state.depth > 26 {
-	    // hacky
-	    continue
-	}
 	let next_states = current_state.get_valid_transitions();
 	
 	//println!("next states:");
@@ -1281,61 +1305,32 @@ mod test {
 	    
     }
 
-    /*
-    #[test]
-    fn test_solve_few_steps() {
-	let mut state = State::new();
-	state.set(6, "A");
-	state.set(11, "A");	
- 	state.set(15, "A");
-	state.set(19, "A");
-	
-	state.set(8, "B");
-	state.set(12, "B");	
-	state.set(16, "B");
-	state.set(20, "B");	
-	
-	state.set(4, "C");
-	state.set(13, "C");	
-	state.set(17, "C");
-	state.set(21, "C");
-	
-	state.set(5, "D");
-	state.set(14, "D");	
-	state.set(18, "D");
-	state.set(22, "D");	
-	
-	let best = solve(state);
-	assert_eq!(best, 2209);
-	
-}*/
-
     
     #[test]
-    fn test_solve_few_steps_2() {
+    fn test_solve_pretty_easy() {
 	let mut state = State::new();
-	state.set(10, "A");
+	state.set(7, "A");
 	state.set(11, "A");	
  	state.set(15, "A");
 	state.set(19, "A");
-	
+
+	state.set(1, "B");	
 	state.set(8, "B");
-	state.set(12, "B");	
+	state.set(12, "C"); // wrong colour trapped
 	state.set(16, "B");
 	state.set(20, "B");	
 	
-	state.set(4, "C");
 	state.set(13, "C");	
 	state.set(17, "C");
 	state.set(21, "C");
 	
-	state.set(0, "D");
+	state.set(10, "D");
 	state.set(14, "D");	
 	state.set(18, "D");
 	state.set(22, "D");	
 	
 	let best = solve(state);
-	assert_eq!(best, 9208);
+	assert_eq!(best, 590);
 	
     }
 }
