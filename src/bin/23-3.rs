@@ -1,3 +1,8 @@
+/// this one finally worked!!!!
+/// had to use hints to realize that my state tree was needlessly big. the Amphipods should either move into the hall or directly "home",
+/// before, I was allowing them to move 1 step at a time up and down the rooms and along the hall, but this was bloated.
+/// Note: i somehow dont get the solution for the example... (off by only a few moves of C; but I get the star. hmm)
+/// also not as fast as ppl online say their's are, but so be it
 use std::{env, io};
 use std::collections::{HashSet, HashMap};
 use priority_queue::PriorityQueue;
@@ -631,49 +636,63 @@ impl State {
 	let room_colour = ROOM_INDICES_TO_COLOUR.get(&from_index).unwrap();
 			
 	let room_indices = COLOUR_TO_ROOM_INDICES.get(&room_colour).unwrap();
-	let mut steps: u64 = 0;
+	let mut room_steps: u64 = 0;
 	for &room_idx in room_indices.iter() {
-	    steps += 1;
+	    room_steps += 1;
 	    if room_idx == from_index {
 		break;
 	    }
 	}
-	
+	//println!("{} steps to get out of the room", room_steps);
 	let door_idx = DOOR_MAPPING.get(&room_colour).unwrap();
-	for hall_idx in *door_idx..11 {
+	let mut hall_steps_right = room_steps;
+	for hall_idx in (*door_idx..11).skip(1) {
 	    // to the right in the hall
-	    steps += 1;
+	    //println!("looking at hall idx {}", hall_idx);
+
+	    if !self.spots[hall_idx].is_none() {
+		//println!("blocked");
+		break;
+	    }
+	    hall_steps_right += 1;	    
 	    if DOOR_INDICES.contains(&hall_idx) {
 		// don't stop outside a door
+		//println!("cannot stop at door");
 		continue;
 	    }
-	    if self.spots[hall_idx].is_none() {
-		let mut new_state = *self; // copy ourself
-		new_state.spots[hall_idx] = new_state.spots[from_index];	   
-		new_state.spots[from_index] = None;
-		new_state.energy_spent += new_state.spots[hall_idx].unwrap().energy * steps;
-		new_state.depth += 1;
-		hall_states.push(new_state);
-	    }
+	    
+
+	    //println!("new state from {} to {}, with {} steps", from_index, hall_idx, hall_steps_right);
+	    let mut new_state = *self; // copy ourself
+	    new_state.spots[hall_idx] = new_state.spots[from_index];	   
+	    new_state.spots[from_index] = None;
+	    new_state.energy_spent += new_state.spots[hall_idx].unwrap().energy * hall_steps_right;
+	    new_state.depth += 1;
+	    hall_states.push(new_state);
 	}
 	
-	//println!("\n\ndoor id = {} step = {}", door_idx, steps);	    	
+	//println!("\n\ndoor id = {} step = {}", door_idx, steps);
+	let mut hall_steps_left = room_steps;	
 	for hall_idx in (0..*door_idx).rev() {
 	    // to the left in the hall
 	    //println!("hall id = {}", hall_idx);
-	    steps += 1;
+	    if !self.spots[hall_idx].is_none() {
+		//println!("blocked");
+		break;
+	    }
+	    hall_steps_left += 1;	    
 	    if DOOR_INDICES.contains(&hall_idx) {
 		// don't stop outside a door
+		//println!("cannot stop at door");
 		continue;
 	    }
-	    if self.spots[hall_idx].is_none() {
-		let mut new_state = *self; // copy ourself
-		new_state.spots[hall_idx] = new_state.spots[from_index];	   
-		new_state.spots[from_index] = None;
-		new_state.energy_spent += new_state.spots[hall_idx].unwrap().energy * steps;
-		new_state.depth += 1;
-		hall_states.push(new_state);
-	    }
+	    //println!("new state from {} to {}, with {} steps", from_index, hall_idx, hall_steps_left);	    
+	    let mut new_state = *self; // copy ourself
+	    new_state.spots[hall_idx] = new_state.spots[from_index];	   
+	    new_state.spots[from_index] = None;
+	    new_state.energy_spent += new_state.spots[hall_idx].unwrap().energy * hall_steps_left;
+	    new_state.depth += 1;
+	    hall_states.push(new_state);
 	}
 	//println!("steps after = {}", steps);	    		    	
 	hall_states
@@ -692,7 +711,7 @@ impl State {
 	
 	let room_indices = COLOUR_TO_ROOM_INDICES.get(&colour).unwrap();
 	let mut to_index = room_indices[0]; // at least the first spot needs to be free to move into a room
-	//println!("to idx = {}", to_index);		    		
+	//println!("to idx = {}, steps to first spot in room = {}", to_index, steps);		    		
 	assert!(self.spots[to_index].is_none());
 	for &room_idx in room_indices.iter().skip(1) {
 	    if self.spots[room_idx].is_none() {
@@ -702,6 +721,7 @@ impl State {
 		break;
 	    }
 	}
+	//println!("new state from {} to {}, with {} steps", from_index, to_index, steps);	    	
 	let mut new_state = *self; // copy ourself
 	new_state.spots[to_index] = new_state.spots[from_index];	   
 	new_state.spots[from_index] = None;
@@ -722,7 +742,11 @@ impl State {
 		    //println!("hallway!");
 		    let door_idx = DOOR_MAPPING.get(&colour).unwrap();
 		    //println!("door idx = {}", door_idx);
-		    let clear_to_door = (from_index..=*door_idx).skip(1).all(|hall_idx| self.spots[hall_idx].is_none());
+		    let higher = std::cmp::max(from_index, *door_idx);
+		    let lower = std::cmp::min(from_index, *door_idx);
+		    let clear_to_door = (lower..=higher)
+			//.inspect(|x| println!("looking at {}", x))
+			.all(|hall_idx| hall_idx == from_index || self.spots[hall_idx].is_none()); // we dont need the from_index to be none (obviously)
 		    if !clear_to_door {
 			// cannot move to the door, so no where to go really
 			//println!("not clear to the door!");
@@ -756,6 +780,7 @@ impl State {
 			    break;
 			} else if !self.spots[room_idx].is_none() {
 			    clear_to_door = false;
+			    //println!("we cannot escape the room since {} is blocked", room_idx);
 			    break;
 			}
 			
@@ -785,7 +810,7 @@ impl State {
 /// we read the file in and populate a State struct, which holds the 15 spots.
 /// Since Amphipods cannot stop outside a room, those empty spaces don't actually need to be stored as a spot
 fn read_file() -> Result<State, io::Error> {
-    let buffered = get_buffered_reader("23-small-2");
+    let buffered = get_buffered_reader("23-2");
     let mut lines =  buffered.lines().skip(2).flatten();
 
     let mut starting_state = State::new();
@@ -858,7 +883,7 @@ fn solve(starting_state: State) -> u64  {
     while !search_queue.is_empty() {
 	count += 1;
 	let (current_state, state_score) = search_queue.pop().unwrap();	
-	if count > 100_000 {
+	if count > 100_000_000 {
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
 	    println!("size of state mapping = {}", state_mapping.len());
@@ -867,7 +892,7 @@ fn solve(starting_state: State) -> u64  {
 	    break;
 	}
 
-	if count % 10000 == 0 {
+	if count % 75_000 == 0 {
 	//if count > 30050 {	    
 	    println!("\n\ncount = {}", count);
 	    println!("search queue len = {:?}", search_queue.len());
@@ -1181,35 +1206,6 @@ mod test {
 	    
     }
 
-    /*
-    #[test]
-    fn test_solve_few_steps() {
-	let mut state = State::new();
-	state.set(6, "A");
-	state.set(11, "A");	
- 	state.set(15, "A");
-	state.set(19, "A");
-	
-	state.set(8, "B");
-	state.set(12, "B");	
-	state.set(16, "B");
-	state.set(20, "B");	
-	
-	state.set(4, "C");
-	state.set(13, "C");	
-	state.set(17, "C");
-	state.set(21, "C");
-	
-	state.set(5, "D");
-	state.set(14, "D");	
-	state.set(18, "D");
-	state.set(22, "D");	
-	
-	let best = solve(state);
-	assert_eq!(best, 2209);
-	
-}*/
-
     
     #[test]
     fn test_solve_few_steps_2() {
@@ -1263,8 +1259,36 @@ mod test {
 	state.set(26, "D");		
 	
 	let best = solve(state);
-	assert_eq!(best, 7259);
+	assert_eq!(best, 8659);
 	
     }
 
+    #[test]
+    fn test_solve_few_steps_4() {
+	let mut state = State::new();
+	state.set(11, "A");
+ 	state.set(15, "A");
+	state.set(19, "A");
+	state.set(23, "A");	
+	
+	state.set(12, "B");
+	state.set(16, "B");
+	state.set(20, "B");
+	state.set(24, "B");		
+	
+	state.set(0, "C");
+	state.set(17, "C");
+	state.set(21, "C");
+	state.set(25, "C");	
+	
+	state.set(1, "D");
+	state.set(18, "D");
+	state.set(22, "D");
+	state.set(26, "D");		
+	
+	let best = solve(state);
+	assert_eq!(best, 8700);
+	
+    }
+    
 }

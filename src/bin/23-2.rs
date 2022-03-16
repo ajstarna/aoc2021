@@ -1,3 +1,5 @@
+/// note: this was the first attempt at cleaning up the code, but still not the final solution
+/// see 23-3.rs
 use std::{env, io};
 use std::collections::{HashSet, HashMap};
 use priority_queue::PriorityQueue;

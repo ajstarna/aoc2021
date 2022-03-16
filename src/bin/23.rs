@@ -1,3 +1,6 @@
+/// note: this solves part one, but was much too slow to solve part two. (also i think there is bug moving out of a room that is dirty)
+/// see 23-3.rs for the better re-write and solutio
+
 use std::{env, io};
 use std::collections::{HashMap};
 use priority_queue::PriorityQueue;
