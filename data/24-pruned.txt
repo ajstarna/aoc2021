@@ -1,0 +1,112 @@
+inp w     w == inp1
+set x 1   x == 1
+set y w   y == w == inp1
+add y 9   y == y + 9 == w + 9 == inp1 + 9
+add z y   z == inp1 + 9
+inp w     w == inp2
+mul x 0   x == 0   (line 2 is redundant)
+add x z   x == inp1 + 9
+mod x 26
+add x 14
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 5
+mul y x
+add z y
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -7
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 13
+mul y x
+add z y
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -12
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 9
+mul y x
+add z y
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -10
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 6
+mul y x
+add z y
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -1
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 2
+mul y x
+add z y
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -11
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 2
+mul y x
+add z y

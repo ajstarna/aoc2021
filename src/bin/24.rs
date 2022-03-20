@@ -1,3 +1,8 @@
+/*
+Note: this first attempt did not work. I basically tried to brute force it (even using threading, which helped, but not enough).
+See 24-2.rs for the next attempt.
+*/
+
 use std::{env};
 use std::collections::HashMap;
 use aoc2021::utils::{get_buffered_reader};
@@ -182,8 +187,8 @@ fn reduce_ops(operations: Vec<Operation>) -> Vec<Operation> {
 
 /// return a vector holding a chunk (vector of operations) for each input section
 /// the input is broken into operation chunks that only depend on the current input and the current z-register value (x and y get wiped)
-TODO read this as chunks. then use the cache that saves the result for the chunk calculation on a given input and z value
-fn read_lines() -> Vec<Vec<Operation>> {
+//TODO read this as chunks. then use the cache that saves the result for the chunk calculation on a given input and z value
+fn read_lines() -> Vec<Operation> {
     let mut operations = Vec::new();
     let inp_re = Regex::new(r"^(\w+) (\w)$").unwrap();
     let op_re = Regex::new(r"^(\w+) (\w) ([-\w]+)$").unwrap();
@@ -237,7 +242,7 @@ fn read_lines() -> Vec<Vec<Operation>> {
 // input_len tells us where to start reading from
 // e.g. input == 120, input_len== 3 tells us to first shift right twice, then once, etc, as we see inp
 // returns if z == 1 at the end (is the model number valid)
-fn run_with_input(input: u64, input_len: u32, operations: &Vec<Vec<Operation>>, cache: HashMap<(u64, i28), i28>) -> bool {
+fn run_with_input(input: u64, input_len: u32, operations: &Vec<Operation>) -> bool {
     if contains_zero(input, input_len) {
 	// not valid
 	//println!("contains zero!");
@@ -357,7 +362,8 @@ fn run_for_remainder(starting_input: u64, ending_input: u64, input_len: u32, ope
 	    continue;
 	}
 	num_run += 1;
-	let is_valid = run_with_input(input, input_len, &operations);
+	//let is_valid = run_with_input(input, input_len, &operations);
+	let is_valid = true;
 	if is_valid {
 	    return Some(input);
 	}
