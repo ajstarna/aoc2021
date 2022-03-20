@@ -103,7 +103,9 @@ fn read_lines() -> Vec<Vec<Operation>> {
 // all_chunks is the vec of all the individual chunks. index tells us which chunk we are operating, and which number in model_num to treat as input
 // z_value is the current value of the z register (the only one that comes from the previous digig)
 // returns the max model num that leads to z==1 at the end
-fn find_max(best_model_num: &mut[u8; 14], model_num: [u8; 14], all_chunks: &Vec<Vec<Operation>>, index: usize, input_z_value: i128, cache: &mut HashMap<(usize, i128), bool>) -> bool {
+// if part2, then we simply search from  1 to 9 instead of 9 to 1
+fn find_max(best_model_num: &mut[u8; 14], model_num: [u8; 14], all_chunks: &Vec<Vec<Operation>>,
+	    index: usize, input_z_value: i128, cache: &mut HashMap<(usize, i128), bool>, part2: bool) -> bool {
     //println!("model num: {:?} entering at index {}, for z-value = {}", model_num, index, input_z_value);    
     if let Some(valid_flag) = cache.get(&(index, input_z_value)) {
 	//println!("found in cache at index {}, for z-value = {}: {}", index, input_z_value, valid_flag);
@@ -183,22 +185,30 @@ fn find_max(best_model_num: &mut[u8; 14], model_num: [u8; 14], all_chunks: &Vec<
     let next_z_value = *registers.get(&'z').unwrap();
     //println!("next z value = {:?}", next_z_value);
     if index == 13 {
-	// we are at the far right part of the input, so simply return the verfict
-	return next_z_value == 1;
+	// we are at the far right part of the input, so simply return the verfict	    
+	let is_valid = next_z_value == 0;// model_num[1] ==  && model_num[4] == 2;
+	if is_valid {
+	    *best_model_num = model_num;
+	    println!("found best_model_num = {:?}", best_model_num);
+	}
+	return is_valid
+	//return 
     } else {
 	let mut is_valid = false;
 	let mut next_model_num = model_num; // copy
 	let next_index = index + 1;
-	for next_val in (6..=9).rev() {
+	let num_iter: Vec<u8> = match part2 {
+	    true => (1..=9).rev().collect(),
+	    false => (1..=9).collect(),
+	};
+	for next_val in num_iter {
 	    //println!("next val = {}", next_val);
 	    next_model_num[next_index] = next_val;
 	    //println!("next model num  = {:?}", next_model_num);
 	    //println!("next index  = {:?}", next_index);	    
 	    //best_model_num: &mut[u8; 14], model_num: [u8; 14], all_chunks: &Vec<Vec<Operation>>, index: usize, input_z_value: i128, cache: &mut HashMap<(usize, i128), bool>) -> bool {	    
-	    if find_max(best_model_num, next_model_num, &all_chunks, next_index, next_z_value, cache) {
+	    if find_max(best_model_num, next_model_num, &all_chunks, next_index, next_z_value, cache, part2) {
 		is_valid = true;
-		*best_model_num = next_model_num;
-		println!("found best_model_num = {:?}", best_model_num);
 		break;
 		//std::exit();
 	    }
@@ -210,26 +220,34 @@ fn find_max(best_model_num: &mut[u8; 14], model_num: [u8; 14], all_chunks: &Vec<
 }
 
 
-fn run() {
+fn run(part2: bool) {
     let all_chunks = read_lines();
     //println!("all chunks = \n{:?}", all_chunks);
     println!("there are {:?} chunks", all_chunks.len());
-    let mut model_num = [9; 14];
+    let mut model_num = [1; 14]; // this is actually arbitrary, since we end up setting the next number explicitley ech time
     let mut best_model_num = [0; 14];    
     let mut cache = HashMap::new();
     let index = 0;
     let z_value = 0;
-    for next_val in (1..=9).rev() {
+    let num_iter: Vec<u8> = match part2 {
+	true => (1..=9).rev().collect(),
+	false => (1..=9).collect(),
+    };
+    
+    for next_val in num_iter {
 	model_num[index] = next_val;
 	println!("model num = {:?}", model_num);	    	    	
-	if find_max(&mut best_model_num, model_num, &all_chunks, index, z_value, &mut cache) {
+	if find_max(&mut best_model_num, model_num, &all_chunks, index, z_value, &mut cache, part2) {
 	    println!("found best_model_num = {:?}", best_model_num);
-	    println!("model num = {:?}", model_num);	    	    
 	    break;
 	}
     }
     //println!("valid = {:?}", valid);
     println!("best model num = {:?}", best_model_num);
+    for val in best_model_num {
+	print!("{}", val);
+    }
+    println!();
 }
 
 fn main() {
@@ -238,8 +256,8 @@ fn main() {
     let part = &args[1];
     println!("part = {}", part);
     match part.as_str() {
-	"1" => run(),
-	"2" => run(),
+	"1" => run(false),
+	"2" => run(true),
 	_ => panic!("invalid part number argument!"),
     }
 }
