@@ -4,6 +4,10 @@ be represented by the index into the number and the value of the z register. At 
 Then we are searching on the possibly input values at each indices. 
 e.g. if we know at index 12 and z value NUM that ANY future inputs for indices 13 and 14 lead to an invalid state, then next time
 we end up at the state (12, NUM), we can early stop, since we know we have been here before and there is no solution.
+
+
+part1 ran in about 4 minutes, while part2 takes a few seconds
+
 */
 use std::{env};
 use std::collections::HashMap;
@@ -198,8 +202,8 @@ fn find_max(best_model_num: &mut[u8; 14], model_num: [u8; 14], all_chunks: &Vec<
 	let mut next_model_num = model_num; // copy
 	let next_index = index + 1;
 	let num_iter: Vec<u8> = match part2 {
-	    true => (1..=9).rev().collect(),
-	    false => (1..=9).collect(),
+	    true => (1..=9).collect(),
+	    false => (1..=9).rev().collect(),
 	};
 	for next_val in num_iter {
 	    //println!("next val = {}", next_val);
@@ -230,8 +234,8 @@ fn run(part2: bool) {
     let index = 0;
     let z_value = 0;
     let num_iter: Vec<u8> = match part2 {
-	true => (1..=9).rev().collect(),
-	false => (1..=9).collect(),
+	true => (1..=9).collect(),
+	false => (1..=9).rev().collect(),
     };
     
     for next_val in num_iter {
